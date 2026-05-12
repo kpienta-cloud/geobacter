@@ -609,6 +609,78 @@ button, input, select, textarea {
   display: flex; gap: 8px; flex-wrap: wrap;
 }
 
+/* Compound-centered comparison */
+.comparison-mode .compare-hero {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--c-accent) 10%, transparent), color-mix(in srgb, var(--c-gold) 7%, transparent));
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.comparison-mode .compare-hero h3 {
+  margin: 8px 0 6px;
+}
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.compare-card {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-panel-2);
+  padding: 10px;
+}
+.compare-card h4 {
+  margin: 0 0 8px;
+  color: var(--c-text-mute);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.compare-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.compare-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--c-text-soft);
+  font-size: var(--fs-12);
+}
+.compare-list .other {
+  align-self: flex-start;
+  border: 0;
+  background: none;
+  color: var(--c-text);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0;
+  text-align: left;
+}
+.compare-list .other:hover {
+  color: var(--c-link);
+  text-decoration: underline;
+}
+.edge-list.compact .edge-card {
+  font-size: 11px;
+}
+
+@media (min-width: 1180px) {
+  .compare-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .compare-card.wide {
+    grid-column: 1 / -1;
+  }
+}
+
 /* Footer */
 .footer {
   display: flex; justify-content: space-between; align-items: center;

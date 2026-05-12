@@ -426,6 +426,31 @@
       state.filters.types,
       onFilterChange,
     );
+    renderCompoundCompareControl();
+  }
+
+  function renderCompoundCompareControl() {
+    const select = $('#compound-compare');
+    const help = $('#compare-help');
+    if (!select) return;
+    select.innerHTML = '';
+    select.appendChild(el('option', { value: '' }, 'Choose a compound…'));
+    const compounds = state.nodes
+      .filter((n) => n.node_type === 'compound')
+      .sort((a, b) => a.label.localeCompare(b.label));
+    for (const n of compounds) {
+      select.appendChild(el('option', { value: n.id }, n.label));
+    }
+    const enabled = state.layer === 'contrast' && compounds.length > 0;
+    select.disabled = !enabled;
+    if (help) {
+      help.textContent = enabled
+        ? 'Choose an exposure to compare microbial transformation with human exposure handling.'
+        : 'Switch to the Human contrast map to enable compound-centered comparison.';
+    }
+    if (state.selectedId && state.nodeIndex.get(state.selectedId)?.node_type === 'compound') {
+      select.value = state.selectedId;
+    }
   }
 
   function renderLegend() {
@@ -644,6 +669,8 @@
     svgState.nodeSel.attr('data-selected', (d) => (d.id === id ? 'true' : null));
     updateLabelVisibility();
     renderDetail();
+    const compare = $('#compound-compare');
+    if (compare) compare.value = id && state.nodeIndex.get(id)?.node_type === 'compound' ? id : '';
     renderShareControls();
     if (id && window.matchMedia('(max-width: 1100px)').matches) openMobileSheet();
   }
@@ -695,11 +722,20 @@
       return;
     }
     const n = state.nodeIndex.get(id);
-    const content = renderNodeDetailContent(n);
+    const isCompoundComparison = state.layer === 'contrast' && n.node_type === 'compound';
+    const content = isCompoundComparison ? renderCompoundComparisonContent(n) : renderNodeDetailContent(n);
     panel.appendChild(content);
-    if (mobilePanel) mobilePanel.appendChild(renderNodeDetailContent(n));
+    if (mobilePanel) mobilePanel.appendChild(isCompoundComparison ? renderCompoundComparisonContent(n) : renderNodeDetailContent(n));
     const mobileTitle = $('#mobile-sheet-title');
     if (mobileTitle) mobileTitle.textContent = n.label;
+  }
+
+  function selectCompoundComparison(id) {
+    if (!id || !state.nodeIndex.has(id)) {
+      selectNode(null);
+      return;
+    }
+    selectNode(id);
   }
 
   function renderNodeDetailContent(n) {
@@ -792,6 +828,128 @@
       edgesSec.appendChild(ul);
     }
     panel.appendChild(edgesSec);
+    return panel;
+  }
+
+  function getOtherNode(edge, selfId) {
+    const s = edge.source.id || edge.source;
+    const t = edge.target.id || edge.target;
+    return state.nodeIndex.get(s === selfId ? t : s);
+  }
+
+  function mechanismNeighborhood(mechanisms) {
+    const out = { processes: new Map(), contrasts: new Map(), edges: [] };
+    for (const mech of mechanisms) {
+      const edges = state.edgesByNode.get(mech.id) || [];
+      for (const e of edges) {
+        const other = getOtherNode(e, mech.id);
+        if (!other) continue;
+        out.edges.push(e);
+        if (other.node_type === 'process') out.processes.set(other.id, other);
+        if (other.node_type === 'contrast') out.contrasts.set(other.id, other);
+      }
+    }
+    return out;
+  }
+
+  function renderMiniNodeList(title, nodes, emptyText) {
+    const card = el('div', { class: 'compare-card' }, [
+      el('h4', {}, title),
+    ]);
+    if (!nodes.length) {
+      card.appendChild(el('p', { class: 'muted' }, emptyText));
+      return card;
+    }
+    const ul = el('ul', { class: 'compare-list' });
+    for (const n of nodes) {
+      ul.appendChild(el('li', {}, [
+        el('button', {
+          type: 'button',
+          class: 'other',
+          onclick: () => selectNode(n.id),
+          title: `Open ${n.label}`,
+        }, n.label),
+        n.description ? el('span', {}, n.description) : null,
+      ]));
+    }
+    card.appendChild(ul);
+    return card;
+  }
+
+  function renderEvidenceList(edges) {
+    const unique = [];
+    const seen = new Set();
+    for (const e of edges) {
+      const key = `${e.edge_id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(e);
+      }
+    }
+    const card = el('div', { class: 'compare-card wide' }, [el('h4', {}, 'Evidence and interpretation')]);
+    const ul = el('ul', { class: 'edge-list compact' });
+    for (const e of unique.slice(0, 10)) {
+      const source = state.nodeIndex.get(e.source.id || e.source);
+      const target = state.nodeIndex.get(e.target.id || e.target);
+      const url = safeUrl(e.source_url);
+      ul.appendChild(el('li', { class: 'edge-card' }, [
+        el('div', { class: 'row' }, [
+          el('span', { class: 'pred' }, e.predicate || '—'),
+          el('span', { class: 'arrow' }, '→'),
+          el('span', { class: 'other' }, `${source?.label || e.source} → ${target?.label || e.target}`),
+          el('span', { class: 'tier', style: `color: ${getComputedStyle(document.documentElement).getPropertyValue(`--t-${e.evidence_tier}`).trim()};` }, `T${e.evidence_tier || '?'}`),
+        ]),
+        el('div', { class: 'meta' }, [
+          e.effect ? el('span', {}, e.effect) : null,
+          e.evidence_type ? el('span', {}, e.evidence_type) : null,
+          url ? el('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, 'source ↗') : null,
+        ]),
+        e.notes ? el('div', { class: 'meta', style: 'font-style: italic;' }, e.notes) : null,
+      ]));
+    }
+    card.appendChild(ul);
+    return card;
+  }
+
+  function renderCompoundComparisonContent(compound) {
+    const panel = el('div', { class: 'detail-content comparison-mode' });
+    const directEdges = state.edgesByNode.get(compound.id) || [];
+    const directNodes = directEdges.map((e) => getOtherNode(e, compound.id)).filter(Boolean);
+    const microbial = directNodes.filter((n) => n.node_type === 'microbe');
+    const human = directNodes.filter((n) => n.node_type === 'human');
+    const microbialNeighborhood = mechanismNeighborhood(microbial);
+    const humanNeighborhood = mechanismNeighborhood(human);
+    const contrastNodes = new Map([
+      ...microbialNeighborhood.contrasts,
+      ...humanNeighborhood.contrasts,
+    ]);
+    const processNodes = new Map([
+      ...microbialNeighborhood.processes,
+      ...humanNeighborhood.processes,
+    ]);
+    const evidenceEdges = [
+      ...directEdges,
+      ...microbialNeighborhood.edges,
+      ...humanNeighborhood.edges,
+    ];
+
+    panel.appendChild(el('div', { class: 'compare-hero' }, [
+      el('div', { class: 'type-pill', style: `color: ${nodeColor(compound)};` }, [
+        el('span', { class: 'swatch' }),
+        'Exposure comparison',
+      ]),
+      el('h3', {}, compound.label),
+      el('p', { class: 'muted' }, compound.description || 'Compound-centered contrast between microbial transformation and human exposure handling.'),
+    ]));
+
+    panel.appendChild(el('div', { class: 'compare-grid' }, [
+      renderMiniNodeList('Geobacter route', microbial, 'No microbial route linked for this compound.'),
+      renderMiniNodeList('Human route', human, 'No human exposure-handling route linked for this compound.'),
+      renderMiniNodeList('Contrast class', Array.from(contrastNodes.values()), 'No contrast class linked yet.'),
+      renderMiniNodeList('Shared chemistry / process', Array.from(processNodes.values()), 'No shared process linked yet.'),
+    ]));
+
+    panel.appendChild(renderEvidenceList(evidenceEdges));
     return panel;
   }
 
@@ -1011,6 +1169,9 @@
     });
     $('#graph-layer')?.addEventListener('change', async (ev) => {
       await switchLayer(ev.target.value);
+    });
+    $('#compound-compare')?.addEventListener('change', (ev) => {
+      selectCompoundComparison(ev.target.value);
     });
 
     $('#btn-clear').addEventListener('click', clearFilters);
