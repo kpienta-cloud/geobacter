@@ -22,6 +22,8 @@ The main package is in [`geotoxgraph/`](./geotoxgraph/).
 | `evolutionary_contrast_nodes.csv` | Human-vs-Geobacter evolutionary contrast node layer. |
 | `evolutionary_contrast_edges.csv` | Human-vs-Geobacter evolutionary contrast edge layer. |
 | `contrast_classes.yaml` | Definitions for conserved chemistry, analogous function, pathway loss, toxic inversion, and host-shifted handling. |
+| `contrast_ontology.md` | Manuscript-facing ontology for contrast classes, outcomes, and required annotation fields. |
+| `evidence_confidence_schema.yaml` | Evidence tiers, starting confidence-score formula, and overclaim flags. |
 
 ## Current graph size
 
@@ -49,6 +51,8 @@ The browser also includes a **Human contrast map** layer. This layer compares Ge
 - chromium redox toxic inversion
 - uranium microbial immobilization versus human renal/stress response
 - organohalide respiration versus human CYP/GSH toxicity-prone handling
+- expanded exposure classes including cadmium, mercury, benzene, PAHs, aromatic amines, nitrosamines, aflatoxin B1, acetaldehyde, vinyl chloride, and chlorinated ethanes
+- tissue contexts including liver, kidney, lung, bladder, bone marrow, esophagus, and CNS
 
 ## Curation note
 
@@ -86,9 +90,12 @@ The `.nojekyll` file ensures the `assets/` directory and dotfiles are served as-
 - Layer switcher for the strain-resolved GeoToxGraph map and the Human contrast map
 - Force-directed network of all 114 nodes / 147 edges in the strain layer
 - Human contrast map with 29 nodes / 27 edges
+- Expanded manuscript-ready contrast map with 60 nodes / 82 edges and 22 compounds
 - Filter by strain, module, evidence tier, node type
 - Free-text search across labels, identifiers, KO, EC, PubChem, ChEBI, KEGG, NCBI, UniProt
 - Click a node to inspect its identifiers, description, source URL, and connected edges
 - Pin or share a selected node URL using `?node=<id>` and `?layer=contrast`
+- Compound-centered comparison mode with Geobacter route, human route, contrast class, tissue context, evidence, and Sankey-style outcome flow
+- Paper figure mode plus SVG/PNG graph export
 - Reset view, dark/light theme toggle, keyboard shortcuts (`/` focus search, `R` reset, `Esc` deselect)
 - Download the currently filtered subgraph as CSV or JSON

@@ -57,6 +57,7 @@
   --n-human:    #e07a8a;
   --n-process:  #6dc7ff;
   --n-contrast: #d4a44a;
+  --n-tissue:   #7bd88f;
 
   /* Evidence tier strokes */
   --t-1: #34d6c0;
@@ -91,6 +92,7 @@
   --n-human:    #b5485b;
   --n-process:  #1d6fb8;
   --n-contrast: #a3742a;
+  --n-tissue:   #4f8a42;
 
   --t-1: #0d8a7a;
   --t-2: #1d6fb8;
@@ -275,6 +277,10 @@ button, input, select, textarea {
   }
   .theme-label { display: none; }
   .optional-label { display: none; }
+  #btn-export-svg,
+  #btn-export-png {
+    display: none;
+  }
   .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 60vh; width: 100%; overflow: hidden; }
   .sidebar { max-height: 50vh; overflow: auto; }
 }
@@ -828,6 +834,28 @@ button, input, select, textarea {
 }
 .footer span { min-width: 0; overflow-wrap: anywhere; }
 .footer code { overflow-wrap: anywhere; }
+
+/* Paper figure mode */
+body.figure-mode .app {
+  grid-template-columns: 1fr 380px;
+}
+body.figure-mode .sidebar,
+body.figure-mode .footer {
+  display: none;
+}
+body.figure-mode .detail {
+  border-left-color: var(--c-border-2);
+}
+body.figure-mode .graph-wrap {
+  min-height: calc(100vh - 48px);
+}
+body.figure-mode .topbar {
+  background: var(--c-bg-2);
+}
+body.figure-mode .brand-sub::after {
+  content: " · paper figure mode";
+  color: var(--c-link);
+}
 
 /* Mobile detail bottom sheet */
 .mobile-sheet-backdrop,

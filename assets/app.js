@@ -30,8 +30,9 @@
     human:    'Human mechanism',
     process:  'Process',
     contrast: 'Contrast class',
+    tissue:   'Tissue context',
   };
-  const NODE_TYPE_ORDER = ['strain', 'module', 'microbe', 'human', 'process', 'contrast', 'gene', 'system', 'compound', 'pathway'];
+  const NODE_TYPE_ORDER = ['strain', 'module', 'microbe', 'human', 'tissue', 'process', 'contrast', 'gene', 'system', 'compound', 'pathway'];
 
   const STRAIN_LABEL = {
     gmet_gs15: 'G. metallireducens GS-15',
@@ -39,6 +40,7 @@
     glov_sz:   'G. lovleyi SZ',
     geo_iae:   'Geobacter sp. strain IAE',
     geobacter: 'Geobacter mechanisms',
+    environmental_microbes: 'Environmental microbes',
     human_host:'Human cells',
     shared:    'Shared compounds/processes',
   };
@@ -54,6 +56,12 @@
     contrast_metals:       'Metal redox contrast',
     contrast_uranium:      'Uranium contrast',
     contrast_organochlorine:'Organohalide contrast',
+    contrast_pah:           'PAH contrast',
+    contrast_aromatic_amines:'Aromatic amine contrast',
+    contrast_nitrosamines:  'Nitrosamine contrast',
+    contrast_aflatoxin:     'Aflatoxin contrast',
+    contrast_aldehydes:     'Aldehyde contrast',
+    tissue_context:         'Human tissue context',
   };
 
   const TIER_LABEL = {
@@ -359,6 +367,7 @@
       human:    css.getPropertyValue('--n-human'),
       process:  css.getPropertyValue('--n-process'),
       contrast: css.getPropertyValue('--n-contrast'),
+      tissue:   css.getPropertyValue('--n-tissue'),
     };
     return (map[node.node_type] || '#9aa').trim();
   }
@@ -367,7 +376,7 @@
     return ({
       strain: 11, module: 9, gene: 5.5, system: 7,
       compound: 6.5, pathway: 7, microbe: 9, human: 9,
-      process: 7.5, contrast: 8,
+      tissue: 7, process: 7.5, contrast: 8,
     })[node.node_type] || 5;
   }
 
@@ -548,21 +557,25 @@
 
   function buildSim() {
     const { width, height } = $('#graph-svg').getBoundingClientRect();
+    const largeGraph = state.nodes.length > 80;
     state.sim = d3.forceSimulation(state.nodes)
-      .force('charge', d3.forceManyBody().strength((d) => (d.node_type === 'strain' ? -400 : d.node_type === 'module' ? -260 : -130)))
+      .force('charge', d3.forceManyBody().strength((d) => {
+        if (largeGraph) return d.node_type === 'strain' ? -240 : d.node_type === 'module' ? -140 : -55;
+        return d.node_type === 'strain' ? -360 : d.node_type === 'module' ? -230 : -110;
+      }))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collide', d3.forceCollide().radius((d) => nodeRadius(d) + 4))
+      .force('collide', d3.forceCollide().radius((d) => nodeRadius(d) + (largeGraph ? 3 : 5)))
       .force('link', d3.forceLink(state.edges)
         .id((d) => d.id)
         .distance((d) => {
           const t = d.evidence_tier;
-          if (d.predicate === 'has_module' || d.predicate === 'member_of') return 50;
-          if (d.predicate === 'participates_in') return 70;
-          return 90;
+          if (d.predicate === 'has_module' || d.predicate === 'member_of') return largeGraph ? 36 : 50;
+          if (d.predicate === 'participates_in') return largeGraph ? 48 : 70;
+          return largeGraph ? 62 : 90;
         })
-        .strength((d) => d.predicate === 'has_module' ? 0.7 : 0.4))
-      .force('x', d3.forceX(width / 2).strength(0.04))
-      .force('y', d3.forceY(height / 2).strength(0.04))
+        .strength((d) => d.predicate === 'has_module' ? 0.75 : largeGraph ? 0.55 : 0.4))
+      .force('x', d3.forceX(width / 2).strength(largeGraph ? 0.075 : 0.04))
+      .force('y', d3.forceY(height / 2).strength(largeGraph ? 0.075 : 0.04))
       .on('tick', tick);
   }
 
@@ -613,7 +626,7 @@
   function tick() {
     if (!svgState.linkSel) return;
     const { width, height } = $('#graph-svg').getBoundingClientRect();
-    const pad = 18;
+    const pad = state.nodes.length > 80 ? 42 : 28;
     for (const d of state.nodes) {
       d.x = Math.max(pad, Math.min(width - pad, d.x || width / 2));
       d.y = Math.max(pad, Math.min(height - pad, d.y || height / 2));
@@ -838,7 +851,7 @@
   }
 
   function mechanismNeighborhood(mechanisms) {
-    const out = { processes: new Map(), contrasts: new Map(), edges: [] };
+    const out = { processes: new Map(), contrasts: new Map(), tissues: new Map(), edges: [] };
     for (const mech of mechanisms) {
       const edges = state.edgesByNode.get(mech.id) || [];
       for (const e of edges) {
@@ -847,6 +860,7 @@
         out.edges.push(e);
         if (other.node_type === 'process') out.processes.set(other.id, other);
         if (other.node_type === 'contrast') out.contrasts.set(other.id, other);
+        if (other.node_type === 'tissue') out.tissues.set(other.id, other);
       }
     }
     return out;
@@ -1025,6 +1039,10 @@
       ...microbialNeighborhood.processes,
       ...humanNeighborhood.processes,
     ]);
+    const tissueNodes = new Map([
+      ...humanNeighborhood.tissues,
+      ...microbialNeighborhood.tissues,
+    ]);
     const evidenceEdges = [
       ...directEdges,
       ...microbialNeighborhood.edges,
@@ -1047,6 +1065,7 @@
       renderMiniNodeList('Human route', human, 'No human exposure-handling route linked for this compound.'),
       renderMiniNodeList('Contrast class', Array.from(contrastNodes.values()), 'No contrast class linked yet.'),
       renderMiniNodeList('Shared chemistry / process', Array.from(processNodes.values()), 'No shared process linked yet.'),
+      renderMiniNodeList('Human tissue context', Array.from(tissueNodes.values()), 'No tissue context linked yet.'),
     ]));
 
     panel.appendChild(renderEvidenceList(evidenceEdges));
@@ -1131,9 +1150,7 @@
         el('dt', {}, 'Modules'), el('dd', { id: 'stat-modules' }, String((() => { const s = new Set(); for (const n of state.nodes) for (const m of n.module_ids) s.add(m); return s.size; })())),
       ]),
       el('p', { class: 'muted' }, [
-        'Schema: ',
-        el('code', {}, 'strain → module → gene / system → compound'),
-        ' with directed reaction edges.',
+        'Schema: strain → module → mechanism → compound.',
       ]),
     ]);
   }
@@ -1239,6 +1256,75 @@
     setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 500);
   }
 
+  function toggleFigureMode() {
+    const on = !document.body.classList.contains('figure-mode');
+    document.body.classList.toggle('figure-mode', on);
+    $('#btn-figure-mode')?.setAttribute('aria-pressed', String(on));
+    setTimeout(() => {
+      if (!state.sim) return;
+      const { width, height } = $('#graph-svg').getBoundingClientRect();
+      state.sim.force('center', d3.forceCenter(width / 2, height / 2));
+      state.sim.force('x', d3.forceX(width / 2).strength(0.04));
+      state.sim.force('y', d3.forceY(height / 2).strength(0.04));
+      state.sim.alpha(0.35).restart();
+    }, 120);
+  }
+
+  function exportGraphSvg() {
+    const svg = $('#graph-svg');
+    if (!svg) return;
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const { width, height } = svg.getBoundingClientRect();
+    clone.setAttribute('width', String(Math.round(width)));
+    clone.setAttribute('height', String(Math.round(height)));
+    clone.setAttribute('viewBox', `0 0 ${Math.round(width)} ${Math.round(height)}`);
+    const style = document.createElement('style');
+    style.textContent = `
+      .link{stroke-opacity:.55;fill:none}.node-label{font:11px sans-serif;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}.body{stroke:#fff;stroke-width:1.5}
+    `;
+    clone.insertBefore(style, clone.firstChild);
+    const xml = new XMLSerializer().serializeToString(clone);
+    triggerDownload(`geotoxgraph-${state.layer}-figure.svg`, xml, 'image/svg+xml');
+  }
+
+  async function exportGraphPng() {
+    const svg = $('#graph-svg');
+    if (!svg) return;
+    const { width, height } = svg.getBoundingClientRect();
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', String(Math.round(width)));
+    clone.setAttribute('height', String(Math.round(height)));
+    clone.setAttribute('viewBox', `0 0 ${Math.round(width)} ${Math.round(height)}`);
+    const xml = new XMLSerializer().serializeToString(clone);
+    const blob = new Blob([xml], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.decoding = 'async';
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = url;
+    }).catch(() => null);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * 2));
+    canvas.height = Math.max(1, Math.round(height * 2));
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    canvas.toBlob((png) => {
+      if (!png) return;
+      const pngUrl = URL.createObjectURL(png);
+      const a = el('a', { href: pngUrl, download: `geotoxgraph-${state.layer}-figure.png`, style: 'display:none;' });
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(pngUrl); a.remove(); }, 500);
+    }, 'image/png');
+  }
+
   // ----- Theme toggle -----
   function setTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
@@ -1280,6 +1366,9 @@
     $('#btn-download-json').addEventListener('click', downloadFilteredJson);
     $('#btn-pin-node')?.addEventListener('click', pinSelectedNode);
     $('#btn-share-node')?.addEventListener('click', shareSelectedNode);
+    $('#btn-figure-mode')?.addEventListener('click', toggleFigureMode);
+    $('#btn-export-svg')?.addEventListener('click', exportGraphSvg);
+    $('#btn-export-png')?.addEventListener('click', exportGraphPng);
     $('#btn-theme').addEventListener('click', () => {
       const cur = document.documentElement.getAttribute('data-theme');
       setTheme(cur === 'dark' ? 'light' : 'dark');

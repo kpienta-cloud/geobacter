@@ -1,0 +1,36 @@
+evidence_tiers:
+  1:
+    label: direct experimental
+    definition: phenotype, mutant, biochemical, kinetic, or direct mechanistic evidence in the relevant organism/system
+    default_score: 0.90
+  2:
+    label: supported inference
+    definition: pathway-level literature, comparative genomics, enrichment population dynamics, or toxicology synthesis with strong support
+    default_score: 0.70
+  3:
+    label: homology or curated analogy
+    definition: plausible mechanism from homologs, pathway databases, or expert curation without direct validation
+    default_score: 0.50
+  4:
+    label: hypothesis
+    definition: conceptual or ecosystem-level hypothesis needing validation
+    default_score: 0.30
+
+confidence_score_formula:
+  description: >
+    Suggested starting score for manuscript tables. Use the minimum of microbial and human evidence scores,
+    then adjust for direct compound matching, tissue specificity, and whether the contrast is interpretation-heavy.
+  terms:
+    microbial_evidence: 0.0-1.0
+    human_evidence: 0.0-1.0
+    compound_specificity_bonus: 0.0-0.05
+    tissue_specificity_bonus: 0.0-0.05
+    interpretive_penalty: 0.0-0.15
+  formula: min(microbial_evidence, human_evidence) + compound_specificity_bonus + tissue_specificity_bonus - interpretive_penalty
+
+overclaim_flags:
+  enzyme_unresolved: Specific enzyme/system not yet identified.
+  species_generalized: Evidence is from a genus or non-Geobacter microbe rather than the focal strain.
+  tissue_generalized: Human mechanism is not localized to a specific tissue/cell type.
+  outcome_inferred: Outcome label is inferred from mechanism rather than directly measured.
+  microbiome_candidate: Candidate microbiome/environmental bridge not yet curated.
