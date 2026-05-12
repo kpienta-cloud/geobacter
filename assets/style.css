@@ -506,6 +506,7 @@ button, input, select, textarea {
   text-transform: uppercase;
 }
 .detail .type-pill .swatch { width: 7px; height: 7px; border-radius: 50%; background: currentColor; border: none; }
+.detail-content { min-width: 0; }
 
 .detail-section { margin-top: 16px; }
 .detail-section h4 {
@@ -595,6 +596,86 @@ button, input, select, textarea {
 }
 .footer span { min-width: 0; overflow-wrap: anywhere; }
 .footer code { overflow-wrap: anywhere; }
+
+/* Mobile detail bottom sheet */
+.mobile-sheet-backdrop,
+.mobile-sheet {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .mobile-sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(0, 0, 0, 0.38);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--t-med);
+  }
+  .mobile-sheet-backdrop[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .mobile-sheet {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 90;
+    max-height: min(76vh, 680px);
+    background: var(--c-panel);
+    border-top: 1px solid var(--c-border-2);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -18px 48px var(--c-shadow);
+    transform: translateY(calc(100% + 18px));
+    transition: transform var(--t-med);
+    overflow: hidden;
+  }
+  .mobile-sheet[data-open="true"] {
+    transform: translateY(0);
+  }
+  .mobile-sheet-grip {
+    width: 46px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--c-border-2);
+    margin: 8px auto 4px;
+  }
+  .mobile-sheet-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px 12px;
+    border-bottom: 1px solid var(--c-border);
+  }
+  .mobile-sheet-kicker {
+    color: var(--c-text-mute);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .mobile-sheet h2 {
+    margin: 2px 0 0;
+    max-width: 70vw;
+    color: var(--c-text);
+    font-size: var(--fs-16);
+    line-height: 1.2;
+  }
+  .mobile-sheet-body {
+    max-height: calc(min(76vh, 680px) - 76px);
+    overflow: auto;
+    padding: 14px 16px 22px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mobile-sheet-body .detail-head h3 {
+    display: none;
+  }
+}
 
 @media (max-width: 520px) {
   .topbar {

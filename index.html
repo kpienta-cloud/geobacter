@@ -149,6 +149,19 @@
     </aside>
   </main>
 
+  <div class="mobile-sheet-backdrop" id="mobile-sheet-backdrop" hidden></div>
+  <aside class="mobile-sheet" id="mobile-sheet" aria-label="Selected node detail" aria-live="polite" hidden>
+    <div class="mobile-sheet-grip" aria-hidden="true"></div>
+    <div class="mobile-sheet-head">
+      <div>
+        <div class="mobile-sheet-kicker">Selected node</div>
+        <h2 id="mobile-sheet-title">Node detail</h2>
+      </div>
+      <button id="btn-sheet-close" class="btn ghost" type="button" aria-label="Close node detail">Close</button>
+    </div>
+    <div id="mobile-detail" class="mobile-sheet-body"></div>
+  </aside>
+
   <footer class="footer" role="contentinfo">
     <span>
       Data: <code>geotoxgraph/geotoxgraph_nodes_enriched.csv</code> ·

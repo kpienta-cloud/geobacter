@@ -559,17 +559,31 @@
     svgState.nodeSel.attr('data-selected', (d) => (d.id === id ? 'true' : null));
     updateLabelVisibility();
     renderDetail();
+    if (id && window.matchMedia('(max-width: 1100px)').matches) openMobileSheet();
   }
 
   function renderDetail() {
     const panel = $('#detail');
     panel.innerHTML = '';
+    const mobilePanel = $('#mobile-detail');
+    if (mobilePanel) mobilePanel.innerHTML = '';
     const id = state.selectedId;
     if (!id || !state.nodeIndex.has(id)) {
       panel.appendChild(renderEmptyDetail());
+      if (mobilePanel) mobilePanel.appendChild(renderEmptyDetail());
+      closeMobileSheet(false);
       return;
     }
     const n = state.nodeIndex.get(id);
+    const content = renderNodeDetailContent(n);
+    panel.appendChild(content);
+    if (mobilePanel) mobilePanel.appendChild(renderNodeDetailContent(n));
+    const mobileTitle = $('#mobile-sheet-title');
+    if (mobileTitle) mobileTitle.textContent = n.label;
+  }
+
+  function renderNodeDetailContent(n) {
+    const panel = el('div', { class: 'detail-content' });
     const color = nodeColor(n);
 
     const head = el('div', { class: 'detail-head' }, [
@@ -658,6 +672,38 @@
       edgesSec.appendChild(ul);
     }
     panel.appendChild(edgesSec);
+    return panel;
+  }
+
+  function openMobileSheet() {
+    const sheet = $('#mobile-sheet');
+    const backdrop = $('#mobile-sheet-backdrop');
+    if (!sheet || !backdrop) return;
+    sheet.hidden = false;
+    backdrop.hidden = false;
+    requestAnimationFrame(() => {
+      sheet.dataset.open = 'true';
+      backdrop.dataset.open = 'true';
+    });
+  }
+
+  function closeMobileSheet(clearSelection = true) {
+    const sheet = $('#mobile-sheet');
+    const backdrop = $('#mobile-sheet-backdrop');
+    if (!sheet || !backdrop) return;
+    sheet.dataset.open = 'false';
+    backdrop.dataset.open = 'false';
+    if (clearSelection && state.selectedId) {
+      state.selectedId = null;
+      if (svgState.nodeSel) svgState.nodeSel.attr('data-selected', null);
+      updateLabelVisibility();
+      renderDetail();
+      return;
+    }
+    setTimeout(() => {
+      if (sheet.dataset.open !== 'true') sheet.hidden = true;
+      if (backdrop.dataset.open !== 'true') backdrop.hidden = true;
+    }, 180);
   }
 
   function renderEdgeCard(e, dir, selfId) {
@@ -852,13 +898,15 @@
       const cur = document.documentElement.getAttribute('data-theme');
       setTheme(cur === 'dark' ? 'light' : 'dark');
     });
+    $('#btn-sheet-close')?.addEventListener('click', () => closeMobileSheet(true));
+    $('#mobile-sheet-backdrop')?.addEventListener('click', () => closeMobileSheet(true));
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (ev) => {
       if (ev.target.matches('input, textarea, select')) return;
       if (ev.key === '/') { ev.preventDefault(); search.focus(); }
       else if (ev.key === 'r' || ev.key === 'R') { resetView(); }
-      else if (ev.key === 'Escape') { selectNode(null); }
+      else if (ev.key === 'Escape') { closeMobileSheet(true); selectNode(null); }
     });
 
     // Resize
