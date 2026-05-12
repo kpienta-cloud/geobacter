@@ -233,6 +233,9 @@
       effect: r.effect || '',
       source_url: r.source_url || '',
       notes: r.notes || '',
+      confidence_score: r.confidence_score || '',
+      overclaim_flags: r.overclaim_flags || '',
+      outcome_label: r.outcome_label || '',
     }));
 
     state.nodes = nodes;
@@ -1014,6 +1017,8 @@
         el('div', { class: 'meta' }, [
           e.effect ? el('span', {}, e.effect) : null,
           e.evidence_type ? el('span', {}, e.evidence_type) : null,
+          e.confidence_score ? el('span', { class: 'confidence-pill' }, `confidence ${e.confidence_score}`) : null,
+          e.overclaim_flags && e.overclaim_flags !== 'none' ? el('span', { class: 'flag-pill' }, e.overclaim_flags.replaceAll(';', ' · ')) : null,
           url ? el('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, 'source ↗') : null,
         ]),
         e.notes ? el('div', { class: 'meta', style: 'font-style: italic;' }, e.notes) : null,
@@ -1127,6 +1132,8 @@
     if (e.effect) meta.appendChild(el('span', {}, e.effect));
     if (e.enzyme_or_system) meta.appendChild(el('span', {}, e.enzyme_or_system));
     if (e.evidence_type) meta.appendChild(el('span', {}, e.evidence_type));
+    if (e.confidence_score) meta.appendChild(el('span', { class: 'confidence-pill' }, `confidence ${e.confidence_score}`));
+    if (e.overclaim_flags && e.overclaim_flags !== 'none') meta.appendChild(el('span', { class: 'flag-pill' }, e.overclaim_flags.replaceAll(';', ' · ')));
     const url = safeUrl(e.source_url);
     if (url) meta.appendChild(el('a', { href: url, target: '_blank', rel: 'noopener noreferrer' }, 'source ↗'));
 

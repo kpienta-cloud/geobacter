@@ -24,6 +24,9 @@ The main package is in [`geotoxgraph/`](./geotoxgraph/).
 | `contrast_classes.yaml` | Definitions for conserved chemistry, analogous function, pathway loss, toxic inversion, and host-shifted handling. |
 | `contrast_ontology.md` | Manuscript-facing ontology for contrast classes, outcomes, and required annotation fields. |
 | `evidence_confidence_schema.yaml` | Evidence tiers, starting confidence-score formula, and overclaim flags. |
+| `build_confidence_and_summary.py` | Reproducibly adds edge-level confidence scores/flags and regenerates manuscript summary tables. |
+| `compound_contrast_summary.csv` | Compound-by-compound manuscript summary table. |
+| `compound_contrast_summary.pplx.md` | Rendered manuscript-support summary table. |
 
 ## Current graph size
 
@@ -96,6 +99,8 @@ The `.nojekyll` file ensures the `assets/` directory and dotfiles are served as-
 - Click a node to inspect its identifiers, description, source URL, and connected edges
 - Pin or share a selected node URL using `?node=<id>` and `?layer=contrast`
 - Compound-centered comparison mode with Geobacter route, human route, contrast class, tissue context, evidence, and Sankey-style outcome flow
+- Edge-level confidence scores and overclaim flags displayed in evidence cards
+- Compound-by-compound manuscript summary table
 - Paper figure mode plus SVG/PNG graph export
 - Reset view, dark/light theme toggle, keyboard shortcuts (`/` focus search, `R` reset, `Esc` deselect)
 - Download the currently filtered subgraph as CSV or JSON
