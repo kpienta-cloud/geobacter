@@ -17,6 +17,14 @@
       edgesUrl: 'geotoxgraph/evolutionary_contrast_edges.csv',
     },
   };
+  const SUMMARY_URL = 'geotoxgraph/compound_contrast_summary.csv';
+  const CONTRAST_CLASS_ORDER = [
+    'Conserved chemistry',
+    'Analogous function',
+    'Pathway loss',
+    'Toxic inversion',
+    'Host-shifted handling',
+  ];
 
   // Display labels for known categorical values
   const NODE_TYPE_LABEL = {
@@ -90,6 +98,7 @@
     sim: null,
     zoomBehavior: null,
     transform: null,
+    summaryRows: [],
   };
 
   // ----- Helpers -----
@@ -247,6 +256,31 @@
       if (!state.edgesByNode.has(e.target)) state.edgesByNode.set(e.target, []);
       state.edgesByNode.get(e.source).push(e);
       state.edgesByNode.get(e.target).push(e);
+    }
+  }
+
+  async function loadSummaryRows() {
+    try {
+      const rows = await d3.csv(SUMMARY_URL);
+      state.summaryRows = rows.map((r) => ({
+        compound_id: r.compound_id || '',
+        compound: r.compound || '',
+        compound_class: r.compound_class || '',
+        microbial_route: r.microbial_route || '',
+        microbial_outcome: r.microbial_outcome || '',
+        human_route: r.human_route || '',
+        human_outcome: r.human_outcome || '',
+        human_tissue_context: r.human_tissue_context || '',
+        contrast_class: r.contrast_class || '',
+        mean_confidence_score: r.mean_confidence_score || '',
+        minimum_confidence_score: r.minimum_confidence_score || '',
+        overclaim_flags: r.overclaim_flags || '',
+        key_sources: r.key_sources || '',
+        summary_note: r.summary_note || '',
+      }));
+    } catch (err) {
+      console.warn('Could not load compound summary table', err);
+      state.summaryRows = [];
     }
   }
 
@@ -463,6 +497,128 @@
     if (state.selectedId && state.nodeIndex.get(state.selectedId)?.node_type === 'compound') {
       select.value = state.selectedId;
     }
+  }
+
+  function splitPipeList(value) {
+    return String(value || '')
+      .split('|')
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+
+  function matrixBadge(text, cls = '') {
+    return el('span', { class: `matrix-badge ${cls}`.trim() }, text);
+  }
+
+  function confidenceClass(score) {
+    const n = Number(score);
+    if (n >= 0.85) return 'high';
+    if (n >= 0.70) return 'medium';
+    return 'low';
+  }
+
+  function renderContrastMatrix() {
+    const table = $('#contrast-matrix-table');
+    if (!table) return;
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    const summary = $('#matrix-summary');
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+    const rows = state.summaryRows || [];
+
+    const contrastCounts = new Map();
+    const tissueCounts = new Map();
+    for (const row of rows) {
+      for (const c of splitPipeList(row.contrast_class)) contrastCounts.set(c, (contrastCounts.get(c) || 0) + 1);
+      for (const t of splitPipeList(row.human_tissue_context)) tissueCounts.set(t, (tissueCounts.get(t) || 0) + 1);
+    }
+    if (summary) {
+      const mean = rows.reduce((acc, r) => acc + Number(r.mean_confidence_score || 0), 0) / Math.max(1, rows.length);
+      summary.innerHTML = '';
+      summary.appendChild(matrixBadge(`${rows.length} compounds`, 'neutral'));
+      summary.appendChild(matrixBadge(`mean confidence ${mean.toFixed(2)}`, confidenceClass(mean)));
+      summary.appendChild(matrixBadge(`${contrastCounts.size} contrast classes`, 'neutral'));
+      summary.appendChild(matrixBadge(`${tissueCounts.size} tissues`, 'neutral'));
+    }
+
+    const header = el('tr', {}, [
+      el('th', {}, 'Compound'),
+      ...CONTRAST_CLASS_ORDER.map((c) => el('th', { class: 'matrix-center', title: c }, c.replace(' ', '\n'))),
+      el('th', {}, 'Tissue context'),
+      el('th', {}, 'Microbial route'),
+      el('th', {}, 'Human route'),
+      el('th', {}, 'Confidence'),
+      el('th', {}, 'Flags'),
+    ]);
+    thead.appendChild(header);
+
+    for (const row of rows) {
+      const classes = new Set(splitPipeList(row.contrast_class));
+      const flags = splitPipeList(String(row.overclaim_flags || '').replaceAll(';', '|')).filter((f) => f !== 'none');
+      const score = Number(row.mean_confidence_score || 0);
+      const tr = el('tr', {
+        tabindex: '0',
+        dataset: { compoundId: row.compound_id },
+        onclick: () => openMatrixCompound(row.compound_id),
+        onkeydown: (ev) => {
+          if (ev.key === 'Enter' || ev.key === ' ') {
+            ev.preventDefault();
+            openMatrixCompound(row.compound_id);
+          }
+        },
+      }, [
+        el('td', { class: 'matrix-compound' }, [
+          el('strong', {}, row.compound),
+          el('span', {}, row.compound_class || '—'),
+        ]),
+        ...CONTRAST_CLASS_ORDER.map((c) => el('td', { class: 'matrix-center' }, [
+          classes.has(c) ? matrixBadge('●', contrastClassSlug(c)) : el('span', { class: 'matrix-empty' }, '—'),
+        ])),
+        el('td', {}, splitPipeList(row.human_tissue_context).length
+          ? splitPipeList(row.human_tissue_context).map((t) => matrixBadge(t, 'tissue'))
+          : [el('span', { class: 'matrix-empty' }, '—')]),
+        el('td', { class: 'matrix-route' }, row.microbial_route || '—'),
+        el('td', { class: 'matrix-route' }, row.human_route || '—'),
+        el('td', { class: 'matrix-confidence' }, [
+          el('span', { class: `confidence-bar ${confidenceClass(score)}` }, [
+            el('span', { style: `width:${Math.max(4, Math.min(100, score * 100))}%` }),
+          ]),
+          el('span', {}, row.mean_confidence_score || '—'),
+        ]),
+        el('td', {}, flags.length
+          ? flags.map((f) => matrixBadge(f, 'flag'))
+          : [matrixBadge('none', 'neutral')]),
+      ]);
+      tbody.appendChild(tr);
+    }
+  }
+
+  function contrastClassSlug(label) {
+    return String(label || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  async function toggleMatrixView(force) {
+    const on = typeof force === 'boolean' ? force : !document.body.classList.contains('matrix-mode');
+    if (on && state.layer !== 'contrast') {
+      await switchLayer('contrast');
+    }
+    if (on && !state.summaryRows.length) await loadSummaryRows();
+    document.body.classList.toggle('matrix-mode', on);
+    $('#matrix-view').hidden = !on;
+    $('#btn-matrix-view')?.setAttribute('aria-pressed', String(on));
+    if (on) renderContrastMatrix();
+  }
+
+  async function openMatrixCompound(compoundId) {
+    await toggleMatrixView(false);
+    if (state.layer !== 'contrast') await switchLayer('contrast');
+    requestAnimationFrame(() => {
+      selectCompoundComparison(compoundId);
+      state.pinnedId = compoundId;
+      setPinnedUrl(compoundId);
+      renderShareControls('Matrix compound opened');
+    });
   }
 
   function renderLegend() {
@@ -1199,6 +1355,14 @@
     return s;
   }
 
+  function csvFromRows(rows) {
+    if (!rows || !rows.length) return '';
+    const cols = Object.keys(rows[0]);
+    return [cols.join(',')]
+      .concat(rows.map((r) => cols.map((c) => csvEscape(r[c])).join(',')))
+      .join('\n');
+  }
+
   function downloadFilteredCsv() {
     const { visibleNodes, visibleEdges } = computeFiltered();
     // Build node CSV using the original column order for compatibility
@@ -1376,6 +1540,12 @@
     $('#btn-figure-mode')?.addEventListener('click', toggleFigureMode);
     $('#btn-export-svg')?.addEventListener('click', exportGraphSvg);
     $('#btn-export-png')?.addEventListener('click', exportGraphPng);
+    $('#btn-matrix-view')?.addEventListener('click', () => toggleMatrixView());
+    $('#btn-close-matrix')?.addEventListener('click', () => toggleMatrixView(false));
+    $('#btn-download-summary')?.addEventListener('click', async () => {
+      if (!state.summaryRows.length) await loadSummaryRows();
+      triggerDownload('compound_contrast_summary.csv', csvFromRows(state.summaryRows), 'text/csv');
+    });
     $('#btn-theme').addEventListener('click', () => {
       const cur = document.documentElement.getAttribute('data-theme');
       setTheme(cur === 'dark' ? 'light' : 'dark');
@@ -1440,6 +1610,9 @@
       }
       return;
     }
+    if (state.layer === 'contrast' && !state.summaryRows.length) {
+      await loadSummaryRows();
+    }
     resetFiltersForLayer();
     if (loading) loading.hidden = true;
     renderFilters();
@@ -1462,6 +1635,7 @@
     } else {
       renderShareControls();
     }
+    if (document.body.classList.contains('matrix-mode')) renderContrastMatrix();
   }
 
   async function switchLayer(layerKey) {
@@ -1475,6 +1649,7 @@
     const select = $('#graph-layer');
     if (select) select.value = layerKey;
     await renderActiveLayer({ restoreFromUrl: false });
+    if (layerKey !== 'contrast') await toggleMatrixView(false);
   }
 
   async function init() {
