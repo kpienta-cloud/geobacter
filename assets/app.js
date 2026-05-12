@@ -876,6 +876,104 @@
     return card;
   }
 
+  function humanizeOutcome(effect) {
+    const map = {
+      detoxification: 'Detoxification',
+      methylation_efflux: 'Methylation + efflux',
+      catabolism: 'Catabolism',
+      oxidation: 'Oxidation',
+      conjugation_excretion: 'Conjugation + excretion',
+      dearomatization: 'Dearomatization',
+      extracellular_reduction: 'Extracellular reduction',
+      genotoxicity: 'DNA damage / genotoxicity',
+      redox_transformation: 'Redox transformation',
+      bioactivation: 'Bioactivation',
+      immobilization: 'Immobilization',
+      nephrotoxicity_response: 'Renal stress response',
+      chlororespiration: 'Chlororespiration',
+      oxidation_conjugation_toxicity: 'Oxidation / GSH toxicity',
+      detoxtification_route: 'Detoxification route',
+      toxicity_prone_metabolism: 'Toxicity-prone metabolism',
+      conserved_chemistry: 'Conserved chemistry',
+      lost_catabolic_pathway: 'Lost catabolic pathway',
+      excretion_not_catabolism: 'Excretion, not catabolism',
+      toxic_inversion: 'Toxic inversion',
+      stress_not_respiration: 'Stress response, not respiration',
+      lost_respiration: 'Lost respiration',
+    };
+    return map[effect] || String(effect || 'Outcome not specified').replace(/_/g, ' ');
+  }
+
+  function outcomeKind(effect, nodeType) {
+    const e = String(effect || '').toLowerCase();
+    if (nodeType === 'microbe' && /catabolism|immobilization|chlororespiration|detox|extracellular|redox/.test(e)) return 'microbial-benefit';
+    if (/genotoxic|bioactivation|toxicity|nephro|stress|damage/.test(e)) return 'human-risk';
+    if (/conjugation|efflux|methylation|excretion/.test(e)) return 'human-handling';
+    if (/lost|inversion/.test(e)) return 'contrast-warning';
+    return 'neutral';
+  }
+
+  function routeSummaries(compound, mechanisms) {
+    const direct = state.edgesByNode.get(compound.id) || [];
+    return mechanisms.map((node) => {
+      const edge = direct.find((e) => (e.source.id || e.source) === compound.id && (e.target.id || e.target) === node.id)
+        || direct.find((e) => (e.target.id || e.target) === compound.id && (e.source.id || e.source) === node.id);
+      return {
+        node,
+        effect: edge?.effect || '',
+        outcome: humanizeOutcome(edge?.effect),
+        kind: outcomeKind(edge?.effect, node.node_type),
+        edge,
+      };
+    });
+  }
+
+  function renderOutcomeChip(text, kind = 'neutral') {
+    return el('span', { class: `outcome-chip ${kind}` }, text);
+  }
+
+  function renderSankeyFlow(compound, microbial, human, contrasts) {
+    const microRoutes = routeSummaries(compound, microbial);
+    const humanRoutes = routeSummaries(compound, human);
+    const contrastLabels = contrasts.map((n) => n.label);
+    const card = el('div', { class: 'sankey-card' }, [
+      el('div', { class: 'sankey-title' }, [
+        el('span', {}, 'Outcome flow'),
+        contrastLabels.length ? el('span', { class: 'sankey-subtitle' }, contrastLabels.join(' · ')) : null,
+      ]),
+    ]);
+
+    function row(label, routes, side) {
+      const route = routes[0];
+      const nodeLabel = route?.node?.label || 'No linked route';
+      const outcome = route?.outcome || 'Outcome not specified';
+      const kind = route?.kind || 'neutral';
+      return el('div', { class: `sankey-row ${side}` }, [
+        el('div', { class: 'sankey-node exposure' }, [el('span', {}, compound.label), renderOutcomeChip('exposure', 'neutral')]),
+        el('div', { class: 'sankey-band', 'aria-hidden': 'true' }),
+        el('div', { class: `sankey-node mechanism ${side}` }, [
+          el('span', { class: 'sankey-kicker' }, label),
+          el('strong', {}, nodeLabel),
+        ]),
+        el('div', { class: 'sankey-band', 'aria-hidden': 'true' }),
+        el('div', { class: `sankey-node outcome ${kind}` }, [
+          el('span', { class: 'sankey-kicker' }, 'Outcome'),
+          renderOutcomeChip(outcome, kind),
+        ]),
+      ]);
+    }
+
+    card.appendChild(row('Geobacter', microRoutes, 'microbe'));
+    card.appendChild(row('Human cells', humanRoutes, 'human'));
+    if (microRoutes.length + humanRoutes.length > 2) {
+      const extras = el('div', { class: 'sankey-extra' });
+      for (const r of microRoutes.slice(1)) extras.appendChild(renderOutcomeChip(`Geobacter: ${r.outcome}`, r.kind));
+      for (const r of humanRoutes.slice(1)) extras.appendChild(renderOutcomeChip(`Human: ${r.outcome}`, r.kind));
+      card.appendChild(extras);
+    }
+    return card;
+  }
+
   function renderEvidenceList(edges) {
     const unique = [];
     const seen = new Set();
@@ -941,6 +1039,8 @@
       el('h3', {}, compound.label),
       el('p', { class: 'muted' }, compound.description || 'Compound-centered contrast between microbial transformation and human exposure handling.'),
     ]));
+
+    panel.appendChild(renderSankeyFlow(compound, microbial, human, Array.from(contrastNodes.values())));
 
     panel.appendChild(el('div', { class: 'compare-grid' }, [
       renderMiniNodeList('Geobacter route', microbial, 'No microbial route linked for this compound.'),

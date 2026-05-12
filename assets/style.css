@@ -620,6 +620,132 @@ button, input, select, textarea {
 .comparison-mode .compare-hero h3 {
   margin: 8px 0 6px;
 }
+.outcome-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 2px 7px;
+  color: var(--c-text-soft);
+  background: var(--c-bg);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.outcome-chip.microbial-benefit {
+  color: var(--n-microbe);
+  background: color-mix(in srgb, var(--n-microbe) 11%, transparent);
+  border-color: color-mix(in srgb, var(--n-microbe) 45%, var(--c-border));
+}
+.outcome-chip.human-risk,
+.outcome-chip.contrast-warning {
+  color: var(--n-human);
+  background: color-mix(in srgb, var(--n-human) 11%, transparent);
+  border-color: color-mix(in srgb, var(--n-human) 45%, var(--c-border));
+}
+.outcome-chip.human-handling {
+  color: var(--n-process);
+  background: color-mix(in srgb, var(--n-process) 10%, transparent);
+  border-color: color-mix(in srgb, var(--n-process) 40%, var(--c-border));
+}
+.sankey-card {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-panel-2);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.sankey-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--c-text);
+  font-size: var(--fs-12);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.sankey-subtitle {
+  color: var(--c-text-mute);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.sankey-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+}
+.sankey-node {
+  min-width: 0;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  background: var(--c-bg);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--c-text);
+}
+.sankey-node strong,
+.sankey-node span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sankey-kicker {
+  color: var(--c-text-mute);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.sankey-row.microbe .sankey-band {
+  width: 12px;
+  height: 18px;
+  margin-left: 18px;
+  background: linear-gradient(180deg, var(--n-compound), var(--n-microbe));
+}
+.sankey-row.human .sankey-band {
+  width: 12px;
+  height: 18px;
+  margin-left: 18px;
+  background: linear-gradient(180deg, var(--n-compound), var(--n-human));
+}
+.sankey-band {
+  position: relative;
+  opacity: 0.72;
+}
+.sankey-band::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%) rotate(90deg);
+  border-left: 7px solid currentColor;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+.sankey-row.microbe .sankey-band { color: var(--n-microbe); }
+.sankey-row.human .sankey-band { color: var(--n-human); }
+.sankey-node.mechanism.microbe {
+  border-color: color-mix(in srgb, var(--n-microbe) 45%, var(--c-border));
+}
+.sankey-node.mechanism.human {
+  border-color: color-mix(in srgb, var(--n-human) 45%, var(--c-border));
+}
+.sankey-extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
 .compare-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -678,6 +804,13 @@ button, input, select, textarea {
   }
   .compare-card.wide {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .sankey-title {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 
