@@ -1,0 +1,27 @@
+conserved_chemistry:
+  label: Conserved chemistry
+  definition: Same reaction logic is retained across microbial and human systems, but proteins and cellular architecture may differ.
+  examples:
+    - arsenic thiol binding
+    - arsenic methylation/redox cycling
+analogous_function:
+  label: Analogous function
+  definition: The exposure challenge is handled in both systems, but by different pathway architecture and with different endpoints.
+  examples:
+    - microbial aromatic catabolism versus human oxidation/conjugation
+pathway_loss:
+  label: Pathway loss
+  definition: A microbial detoxification or catabolic pathway has no host-cell equivalent in human exposure handling.
+  examples:
+    - organohalide respiration
+    - anaerobic benzoyl-CoA reductive dearomatization
+toxic_inversion:
+  label: Toxic inversion
+  definition: A transformation that can be environmentally detoxifying or respiratory in microbes becomes bioactivating or damage-prone in human cells.
+  examples:
+    - intracellular Cr(VI) reduction leading to Cr-DNA lesions
+host_shifted:
+  label: Host-shifted handling
+  definition: Human biology handles the exposure through sequestration, stress response, repair, distribution, inflammation, or tissue injury rather than full degradation.
+  examples:
+    - uranium nephrotoxicity and metallothionein-associated protection

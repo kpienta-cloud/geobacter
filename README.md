@@ -19,6 +19,9 @@ The main package is in [`geotoxgraph/`](./geotoxgraph/).
 | `neo4j_import_readme.md` | Neo4j import instructions. |
 | `build_enriched_geotoxgraph.py` | Reproducible enrichment script. |
 | `geotoxgraph_enrichment_report.pplx.md` | Summary of the enrichment pass. |
+| `evolutionary_contrast_nodes.csv` | Human-vs-Geobacter evolutionary contrast node layer. |
+| `evolutionary_contrast_edges.csv` | Human-vs-Geobacter evolutionary contrast edge layer. |
+| `contrast_classes.yaml` | Definitions for conserved chemistry, analogous function, pathway loss, toxic inversion, and host-shifted handling. |
 
 ## Current graph size
 
@@ -37,6 +40,16 @@ The main package is in [`geotoxgraph/`](./geotoxgraph/).
 - *Geobacter lovleyi* SZ organohalide module
 - Geobacter sp. strain IAE chlorinated-ethane dihaloelimination module
 
+## Evolutionary contrast layer
+
+The browser also includes a **Human contrast map** layer. This layer compares GeoToxGraph microbial mechanisms with human exposure-handling mechanisms across:
+
+- arsenic thiol chemistry, methylation, and efflux
+- aromatic hydrocarbon oxidation/conjugation versus microbial anaerobic catabolism
+- chromium redox toxic inversion
+- uranium microbial immobilization versus human renal/stress response
+- organohalide respiration versus human CYP/GSH toxicity-prone handling
+
 ## Curation note
 
 MetaCyc fields are included as candidate annotations rather than verified stable BioCyc identifiers. Candidate fields are marked with `metacyc_status = candidate_unverified`.
@@ -49,7 +62,7 @@ This repository ships with a static, dependency-free graph browser at the reposi
 - `assets/style.css`, `assets/app.js` — styling and D3.js graph code (D3 loaded from a CDN)
 - `.nojekyll` — disables Jekyll so `assets/` is served verbatim
 
-The browser reads `geotoxgraph/geotoxgraph_nodes_enriched.csv` and `geotoxgraph/geotoxgraph_edges_enriched.csv` directly in the client. There is no build step.
+The browser reads the active graph layer directly from CSV files in `geotoxgraph/`. There is no build step.
 
 ### Run locally
 
@@ -70,9 +83,12 @@ The `.nojekyll` file ensures the `assets/` directory and dotfiles are served as-
 
 ### Features
 
-- Force-directed network of all 114 nodes / 147 edges
+- Layer switcher for the strain-resolved GeoToxGraph map and the Human contrast map
+- Force-directed network of all 114 nodes / 147 edges in the strain layer
+- Human contrast map with 29 nodes / 27 edges
 - Filter by strain, module, evidence tier, node type
 - Free-text search across labels, identifiers, KO, EC, PubChem, ChEBI, KEGG, NCBI, UniProt
 - Click a node to inspect its identifiers, description, source URL, and connected edges
+- Pin or share a selected node URL using `?node=<id>` and `?layer=contrast`
 - Reset view, dark/light theme toggle, keyboard shortcuts (`/` focus search, `R` reset, `Esc` deselect)
 - Download the currently filtered subgraph as CSV or JSON

@@ -5,8 +5,18 @@
   'use strict';
 
   // ----- Static config -----
-  const NODES_URL = 'geotoxgraph/geotoxgraph_nodes_enriched.csv';
-  const EDGES_URL = 'geotoxgraph/geotoxgraph_edges_enriched.csv';
+  const LAYERS = {
+    geotox: {
+      label: 'GeoToxGraph strain map',
+      nodesUrl: 'geotoxgraph/geotoxgraph_nodes_enriched.csv',
+      edgesUrl: 'geotoxgraph/geotoxgraph_edges_enriched.csv',
+    },
+    contrast: {
+      label: 'Human contrast map',
+      nodesUrl: 'geotoxgraph/evolutionary_contrast_nodes.csv',
+      edgesUrl: 'geotoxgraph/evolutionary_contrast_edges.csv',
+    },
+  };
 
   // Display labels for known categorical values
   const NODE_TYPE_LABEL = {
@@ -16,14 +26,21 @@
     system:   'System',
     compound: 'Compound',
     pathway:  'Pathway',
+    microbe:  'Microbial mechanism',
+    human:    'Human mechanism',
+    process:  'Process',
+    contrast: 'Contrast class',
   };
-  const NODE_TYPE_ORDER = ['strain', 'module', 'gene', 'system', 'compound', 'pathway'];
+  const NODE_TYPE_ORDER = ['strain', 'module', 'microbe', 'human', 'process', 'contrast', 'gene', 'system', 'compound', 'pathway'];
 
   const STRAIN_LABEL = {
     gmet_gs15: 'G. metallireducens GS-15',
     gsu_pca:   'G. sulfurreducens PCA',
     glov_sz:   'G. lovleyi SZ',
     geo_iae:   'Geobacter sp. strain IAE',
+    geobacter: 'Geobacter mechanisms',
+    human_host:'Human cells',
+    shared:    'Shared compounds/processes',
   };
   const MODULE_LABEL = {
     gmet_aromatics:        'GS-15 aromatics',
@@ -32,6 +49,11 @@
     gsu_metal_redox:       'PCA metal redox',
     glov_organochlorine:   'lovleyi organohalide',
     geo_iae_organochlorine:'IAE organohalide',
+    contrast_arsenic:      'Arsenic contrast',
+    contrast_aromatics:    'Aromatics contrast',
+    contrast_metals:       'Metal redox contrast',
+    contrast_uranium:      'Uranium contrast',
+    contrast_organochlorine:'Organohalide contrast',
   };
 
   const TIER_LABEL = {
@@ -54,7 +76,9 @@
       tiers: new Set(['1', '2', '3', '4']),
       types: new Set(NODE_TYPE_ORDER),
     },
+    layer: 'geotox',
     selectedId: null,
+    pinnedId: null,
     sim: null,
     zoomBehavior: null,
     transform: null,
@@ -103,12 +127,50 @@
       return (url.protocol === 'http:' || url.protocol === 'https:') ? url.toString() : null;
     } catch { return null; }
   }
+  function selectedNodeUrl(id = state.selectedId) {
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set('node', id);
+    else url.searchParams.delete('node');
+    if (state.layer && state.layer !== 'geotox') url.searchParams.set('layer', state.layer);
+    else url.searchParams.delete('layer');
+    url.hash = '';
+    return url.toString();
+  }
+  function getUrlNodeId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('node') || null;
+  }
+  function getUrlLayer() {
+    const params = new URLSearchParams(window.location.search);
+    const layer = params.get('layer');
+    return LAYERS[layer] ? layer : 'geotox';
+  }
+  function setPinnedUrl(id) {
+    window.history.replaceState({}, '', selectedNodeUrl(id));
+  }
+  function renderShareControls(message = '') {
+    const pinBtn = $('#btn-pin-node');
+    const shareBtn = $('#btn-share-node');
+    const status = $('#share-status');
+    const hasSelection = Boolean(state.selectedId);
+    if (pinBtn) {
+      pinBtn.disabled = !hasSelection;
+      pinBtn.classList.toggle('active', hasSelection && state.pinnedId === state.selectedId);
+      pinBtn.setAttribute('aria-pressed', String(hasSelection && state.pinnedId === state.selectedId));
+      const label = pinBtn.querySelector('.optional-label');
+      if (label) label.textContent = hasSelection && state.pinnedId === state.selectedId ? 'Pinned' : 'Pin node';
+    }
+    if (shareBtn) shareBtn.disabled = !hasSelection;
+    if (status) status.textContent = message;
+    if (message) setTimeout(() => { if ($('#share-status')?.textContent === message) $('#share-status').textContent = ''; }, 2200);
+  }
 
   // ----- Load + parse -----
   async function loadData() {
+    const layer = LAYERS[state.layer] || LAYERS.geotox;
     const [nodesRaw, edgesRaw] = await Promise.all([
-      d3.csv(NODES_URL),
-      d3.csv(EDGES_URL),
+      d3.csv(layer.nodesUrl),
+      d3.csv(layer.edgesUrl),
     ]);
 
     const nodes = nodesRaw.map((r) => ({
@@ -145,7 +207,7 @@
         n.kegg_pathways, n.kegg_modules,
         n.ncbi_protein_ids, n.uniprot_ids,
         n.pubchem_cid, n.kegg_compound, n.chebi_id,
-        n.description, n.entity_class,
+        n.description, n.entity_class, n.annotation_status, n.strain_id, n.module_id,
       ].join(' ').toLowerCase();
     }
 
@@ -175,6 +237,18 @@
       state.edgesByNode.get(e.source).push(e);
       state.edgesByNode.get(e.target).push(e);
     }
+  }
+
+  function resetFiltersForLayer() {
+    const types = new Set(state.nodes.map((n) => n.node_type).filter(Boolean));
+    const tiers = new Set(state.edges.map((e) => e.evidence_tier).filter(Boolean));
+    state.filters.q = '';
+    state.filters.strains.clear();
+    state.filters.modules.clear();
+    state.filters.tiers = tiers.size ? tiers : new Set(['1', '2', '3', '4']);
+    state.filters.types = types.size ? types : new Set(NODE_TYPE_ORDER);
+    const search = $('#q-search');
+    if (search) search.value = '';
   }
 
   // ----- Filter logic -----
@@ -281,6 +355,10 @@
       system:   css.getPropertyValue('--n-system'),
       compound: css.getPropertyValue('--n-compound'),
       pathway:  css.getPropertyValue('--n-pathway'),
+      microbe:  css.getPropertyValue('--n-microbe'),
+      human:    css.getPropertyValue('--n-human'),
+      process:  css.getPropertyValue('--n-process'),
+      contrast: css.getPropertyValue('--n-contrast'),
     };
     return (map[node.node_type] || '#9aa').trim();
   }
@@ -288,7 +366,8 @@
   function nodeRadius(node) {
     return ({
       strain: 11, module: 9, gene: 5.5, system: 7,
-      compound: 6.5, pathway: 7,
+      compound: 6.5, pathway: 7, microbe: 9, human: 9,
+      process: 7.5, contrast: 8,
     })[node.node_type] || 5;
   }
 
@@ -353,7 +432,8 @@
     // Node types
     const ul = $('#legend-types');
     ul.innerHTML = '';
-    for (const t of NODE_TYPE_ORDER) {
+    const presentTypes = new Set(state.nodes.map((n) => n.node_type));
+    for (const t of NODE_TYPE_ORDER.filter((type) => presentTypes.has(type))) {
       const c = getComputedStyle(document.documentElement).getPropertyValue(`--n-${t}`).trim();
       ul.appendChild(el('li', {}, [
         el('span', { class: 'swatch', style: `color: ${c}; background: ${c};` }),
@@ -363,7 +443,8 @@
     // Tiers
     const ulT = $('#legend-tiers');
     ulT.innerHTML = '';
-    for (const t of ['1', '2', '3', '4']) {
+    const presentTiers = new Set(state.edges.map((e) => e.evidence_tier).filter(Boolean));
+    for (const t of ['1', '2', '3', '4'].filter((tier) => presentTiers.has(tier))) {
       const c = getComputedStyle(document.documentElement).getPropertyValue(`--t-${t}`).trim();
       const stroke = el('span', { class: 'stroke', style: `color: ${c};` });
       if (t === '4') stroke.style.backgroundImage = `repeating-linear-gradient(90deg, ${c} 0 3px, transparent 3px 6px)`;
@@ -556,10 +637,49 @@
   // ----- Selection / detail panel -----
   function selectNode(id) {
     state.selectedId = id;
+    if (!id && state.pinnedId) {
+      state.pinnedId = null;
+      setPinnedUrl(null);
+    }
     svgState.nodeSel.attr('data-selected', (d) => (d.id === id ? 'true' : null));
     updateLabelVisibility();
     renderDetail();
+    renderShareControls();
     if (id && window.matchMedia('(max-width: 1100px)').matches) openMobileSheet();
+  }
+
+  function pinSelectedNode() {
+    if (!state.selectedId) return;
+    if (state.pinnedId === state.selectedId) {
+      state.pinnedId = null;
+      setPinnedUrl(null);
+      renderShareControls('Node unpinned');
+      return;
+    }
+    state.pinnedId = state.selectedId;
+    setPinnedUrl(state.selectedId);
+    renderShareControls('Node pinned in URL');
+  }
+
+  async function shareSelectedNode() {
+    if (!state.selectedId) return;
+    const url = selectedNodeUrl(state.selectedId);
+    state.pinnedId = state.selectedId;
+    setPinnedUrl(state.selectedId);
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(url);
+      else throw new Error('clipboard unavailable');
+      renderShareControls('Node URL copied');
+    } catch {
+      const box = el('textarea', { style: 'position:fixed;left:-9999px;top:0;' }, url);
+      document.body.appendChild(box);
+      box.focus();
+      box.select();
+      let copied = false;
+      try { copied = document.execCommand('copy'); } catch {}
+      box.remove();
+      renderShareControls(copied ? 'Node URL copied' : 'Copy URL from address bar');
+    }
   }
 
   function renderDetail() {
@@ -889,11 +1009,16 @@
         onFilterChange();
       }, 80);
     });
+    $('#graph-layer')?.addEventListener('change', async (ev) => {
+      await switchLayer(ev.target.value);
+    });
 
     $('#btn-clear').addEventListener('click', clearFilters);
     $('#btn-reset').addEventListener('click', resetView);
     $('#btn-download-csv').addEventListener('click', downloadFilteredCsv);
     $('#btn-download-json').addEventListener('click', downloadFilteredJson);
+    $('#btn-pin-node')?.addEventListener('click', pinSelectedNode);
+    $('#btn-share-node')?.addEventListener('click', shareSelectedNode);
     $('#btn-theme').addEventListener('click', () => {
       const cur = document.documentElement.getAttribute('data-theme');
       setTheme(cur === 'dark' ? 'light' : 'dark');
@@ -937,18 +1062,29 @@
     }
   }
 
-  async function init() {
-    bindUi();
-    setRepoLink();
-    setupSvg();
+  async function renderActiveLayer({ restoreFromUrl = false } = {}) {
+    const loading = $('#loading');
+    if (loading) {
+      loading.hidden = false;
+      loading.textContent = `Loading ${LAYERS[state.layer].label}…`;
+    }
+    if (state.sim) state.sim.stop();
+    state.selectedId = null;
+    state.pinnedId = null;
+    closeMobileSheet(false);
+    if (svgState.root) svgState.root.selectAll('*').remove();
     try {
       await loadData();
     } catch (err) {
       console.error(err);
-      $('#loading').textContent = 'Failed to load graph data. Open via a local web server (e.g. python -m http.server) — file:// blocks CSV fetch.';
+      if (loading) {
+        loading.hidden = false;
+        loading.textContent = 'Failed to load graph data. Open via a local web server (e.g. python -m http.server) — file:// blocks CSV fetch.';
+      }
       return;
     }
-    $('#loading').remove();
+    resetFiltersForLayer();
+    if (loading) loading.hidden = true;
     renderFilters();
     renderLegend();
     buildSim();
@@ -958,6 +1094,40 @@
     applyVisibility(r);
     updateCounts(r);
     renderDetail();
+    const urlNode = restoreFromUrl ? getUrlNodeId() : null;
+    if (urlNode && state.nodeIndex.has(urlNode)) {
+      state.pinnedId = urlNode;
+      setTimeout(() => {
+        selectNode(urlNode);
+        state.pinnedId = urlNode;
+        renderShareControls('Shared node restored');
+      }, 300);
+    } else {
+      renderShareControls();
+    }
+  }
+
+  async function switchLayer(layerKey) {
+    if (!LAYERS[layerKey]) return;
+    state.layer = layerKey;
+    const url = new URL(window.location.href);
+    if (layerKey === 'geotox') url.searchParams.delete('layer');
+    else url.searchParams.set('layer', layerKey);
+    url.searchParams.delete('node');
+    window.history.replaceState({}, '', url);
+    const select = $('#graph-layer');
+    if (select) select.value = layerKey;
+    await renderActiveLayer({ restoreFromUrl: false });
+  }
+
+  async function init() {
+    bindUi();
+    setRepoLink();
+    setupSvg();
+    state.layer = getUrlLayer();
+    const select = $('#graph-layer');
+    if (select) select.value = state.layer;
+    await renderActiveLayer({ restoreFromUrl: true });
   }
 
   if (document.readyState === 'loading') {

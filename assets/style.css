@@ -53,6 +53,10 @@
   --n-system:   #b48bf2;
   --n-compound: #e8eef2;
   --n-pathway:  #f0bc6a;
+  --n-microbe:  #34d6c0;
+  --n-human:    #e07a8a;
+  --n-process:  #6dc7ff;
+  --n-contrast: #d4a44a;
 
   /* Evidence tier strokes */
   --t-1: #34d6c0;
@@ -83,6 +87,10 @@
   --n-system:   #6e4dc9;
   --n-compound: #1b2a31;
   --n-pathway:  #b78423;
+  --n-microbe:  #0d8a7a;
+  --n-human:    #b5485b;
+  --n-process:  #1d6fb8;
+  --n-contrast: #a3742a;
 
   --t-1: #0d8a7a;
   --t-2: #1d6fb8;
@@ -206,6 +214,16 @@ button, input, select, textarea {
 }
 .btn:hover { background: var(--c-bg-3); color: var(--c-text); border-color: var(--c-border-2); }
 .btn:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 1px; }
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.btn.active,
+.btn[aria-pressed="true"].active {
+  background: color-mix(in srgb, var(--c-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--c-accent) 55%, var(--c-border));
+  color: var(--c-text);
+}
 .btn.ghost { background: transparent; }
 .btn.ghost:hover { background: var(--c-bg-3); }
 .btn.link {
@@ -216,6 +234,14 @@ button, input, select, textarea {
   font-weight: 500;
 }
 .btn.link:hover { text-decoration: underline; background: none; }
+.share-status {
+  min-width: 0;
+  max-width: 150px;
+  color: var(--c-link);
+  font-size: 11px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
 
 /* Theme icon swap */
 [data-theme="dark"]  .theme-icon.light-only { display: none; }
@@ -248,6 +274,7 @@ button, input, select, textarea {
     gap: 4px;
   }
   .theme-label { display: none; }
+  .optional-label { display: none; }
   .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 60vh; width: 100%; overflow: hidden; }
   .sidebar { max-height: 50vh; overflow: auto; }
 }
@@ -290,7 +317,7 @@ button, input, select, textarea {
   padding: 0;
   margin: 0;
 }
-.field input[type="search"], .field input[type="text"] {
+.field input[type="search"], .field input[type="text"], .field select {
   width: 100%;
   padding: 7px 9px;
   font-size: var(--fs-13);
@@ -299,7 +326,7 @@ button, input, select, textarea {
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
 }
-.field input[type="search"]:focus {
+.field input[type="search"]:focus, .field select:focus {
   outline: 2px solid var(--c-focus);
   outline-offset: 0;
   border-color: transparent;
