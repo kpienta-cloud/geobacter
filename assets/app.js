@@ -86,6 +86,16 @@
       .map((x) => x.trim())
       .filter(Boolean);
   }
+  function displayLabel(d) {
+    const label = String(d.label || d.id || '');
+    const locus = String(d.identifier || '');
+    let cleaned = label;
+    if (locus && cleaned.startsWith(`${locus} ${locus}`)) {
+      cleaned = `${locus}${cleaned.slice((`${locus} ${locus}`).length)}`;
+    }
+    if (cleaned.length > 34) return `${cleaned.slice(0, 31)}…`;
+    return cleaned;
+  }
   function safeUrl(u) {
     if (!u) return null;
     try {
@@ -232,12 +242,13 @@
         if (cb.checked) set.add(val); else set.delete(val);
         onChange();
       });
-      const label = el('label', { class: 'chk' }, [
+      const children = [
         cb,
         getColor ? el('span', { class: 'swatch', style: `color: ${getColor(val)}; background: ${getColor(val)};` }) : null,
         el('span', {}, getLabel(val)),
-        el('span', { class: 'count' }, String(count)),
-      ]);
+      ];
+      if (count !== '' && count != null) children.push(el('span', { class: 'count' }, String(count)));
+      const label = el('label', { class: 'chk' }, children);
       container.appendChild(label);
     }
   }
@@ -298,7 +309,7 @@
     for (const n of state.nodes) for (const m of n.module_ids) {
       modCounts.set(m, (modCounts.get(m) || 0) + 1);
     }
-    const modItems = Array.from(modCounts.entries()).sort((a, b) => b[1] - a[1]);
+    const modItems = Array.from(modCounts.keys()).sort().map((m) => [m, '']);
     buildCheckGroup(
       $('#filter-modules'),
       modItems,
@@ -417,9 +428,7 @@
       .on('zoom', (ev) => {
         root.attr('transform', ev.transform);
         state.transform = ev.transform;
-        // Adjust label visibility by zoom
-        root.selectAll('.node-label')
-          .style('display', ev.transform.k < 0.7 ? 'none' : null);
+        updateLabelVisibility();
       });
     state.zoomBehavior = zoom;
     svg.call(zoom);
@@ -490,19 +499,26 @@
       .attr('class', 'node-label')
       .attr('text-anchor', 'middle')
       .attr('dy', (d) => -nodeRadius(d) - 4)
-      .text((d) => d.label);
+      .text((d) => displayLabel(d));
 
     svgState.nodeSel = nodesEnter.merge(nodes);
   }
 
   function tick() {
     if (!svgState.linkSel) return;
+    const { width, height } = $('#graph-svg').getBoundingClientRect();
+    const pad = 18;
+    for (const d of state.nodes) {
+      d.x = Math.max(pad, Math.min(width - pad, d.x || width / 2));
+      d.y = Math.max(pad, Math.min(height - pad, d.y || height / 2));
+    }
     svgState.linkSel.attr('d', (d) => {
       const s = d.source, t = d.target;
       // straight path with arrow offset implicit via marker refX
       return `M${s.x},${s.y}L${t.x},${t.y}`;
     });
     svgState.nodeSel.attr('transform', (d) => `translate(${d.x},${d.y})`);
+    updateLabelVisibility();
   }
 
   function applyVisibility({ visibleNodes, visibleEdges }) {
@@ -510,12 +526,38 @@
     const visibleEdgeIds = new Set(visibleEdges.map((e) => e.edge_id));
     svgState.nodeSel.classed('dim', (d) => !visibleNodes.has(d.id));
     svgState.linkSel.classed('dim', (d) => !visibleEdgeIds.has(d.edge_id));
+    updateLabelVisibility(visibleNodes);
+  }
+
+  function updateLabelVisibility(visibleNodes = null) {
+    if (!svgState.nodeSel) return;
+    const qActive = Boolean(state.filters.q);
+    const visible = visibleNodes || computeFiltered().visibleNodes;
+    const bounds = $('#graph-svg').getBoundingClientRect();
+    const transform = state.transform || d3.zoomIdentity;
+    svgState.nodeSel.select('.node-label')
+      .style('display', (d) => {
+        const highLevel = false;
+        const selected = d.id === state.selectedId;
+        const searchHit = qActive && visible.has(d.id);
+        const sx = transform.applyX(d.x || 0);
+        const sy = transform.applyY(d.y || 0);
+        const labelPad = 72;
+        const labelTopPad = 28;
+        const insideViewport =
+          sx > labelPad &&
+          sx < bounds.width - labelPad &&
+          sy > labelTopPad &&
+          sy < bounds.height - labelTopPad;
+        return ((highLevel || selected || searchHit) && insideViewport) ? null : 'none';
+      });
   }
 
   // ----- Selection / detail panel -----
   function selectNode(id) {
     state.selectedId = id;
     svgState.nodeSel.attr('data-selected', (d) => (d.id === id ? 'true' : null));
+    updateLabelVisibility();
     renderDetail();
   }
 
