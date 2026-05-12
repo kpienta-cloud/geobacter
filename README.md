@@ -40,3 +40,39 @@ The main package is in [`geotoxgraph/`](./geotoxgraph/).
 ## Curation note
 
 MetaCyc fields are included as candidate annotations rather than verified stable BioCyc identifiers. Candidate fields are marked with `metacyc_status = candidate_unverified`.
+
+## Interactive graph browser
+
+This repository ships with a static, dependency-free graph browser at the repository root:
+
+- `index.html` — entry page
+- `assets/style.css`, `assets/app.js` — styling and D3.js graph code (D3 loaded from a CDN)
+- `.nojekyll` — disables Jekyll so `assets/` is served verbatim
+
+The browser reads `geotoxgraph/geotoxgraph_nodes_enriched.csv` and `geotoxgraph/geotoxgraph_edges_enriched.csv` directly in the client. There is no build step.
+
+### Run locally
+
+Browsers block CSV fetches from `file://` URLs, so serve via any static HTTP server:
+
+```bash
+python3 -m http.server 8000
+# then open http://localhost:8000/
+```
+
+### Deploy on GitHub Pages
+
+1. Push the repository to GitHub.
+2. In **Settings → Pages**, set **Source** to **Deploy from a branch**, **Branch** = `main`, **Folder** = `/ (root)`.
+3. GitHub will serve `index.html` at `https://<user>.github.io/<repo>/`.
+
+The `.nojekyll` file ensures the `assets/` directory and dotfiles are served as-is.
+
+### Features
+
+- Force-directed network of all 114 nodes / 147 edges
+- Filter by strain, module, evidence tier, node type
+- Free-text search across labels, identifiers, KO, EC, PubChem, ChEBI, KEGG, NCBI, UniProt
+- Click a node to inspect its identifiers, description, source URL, and connected edges
+- Reset view, dark/light theme toggle, keyboard shortcuts (`/` focus search, `R` reset, `Esc` deselect)
+- Download the currently filtered subgraph as CSV or JSON
