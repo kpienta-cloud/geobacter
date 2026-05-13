@@ -1,6 +1,15 @@
 # Geobacter GeoToxGraph
 
-This repository contains a strain-resolved GeoToxGraph seed build for mapping Geobacter toxin biotransformation, detoxification, immobilization, and organohalide modules.
+**Open the interactive knowledge-graph tool:** [GeoToxGraph Browser](https://kpienta-cloud.github.io/geobacter/)
+
+This repository contains a strain-resolved GeoToxGraph seed build for mapping Geobacter toxin biotransformation, detoxification, immobilization, and organohalide modules. The GitHub Pages site opens directly to the interactive knowledge-graph browser, with additional layers for microbial-human evolutionary contrast mapping, compound-centered comparisons, confidence flags, and manuscript-ready matrix views.
+
+## Quick links
+
+- **Interactive knowledge graph:** [https://kpienta-cloud.github.io/geobacter/](https://kpienta-cloud.github.io/geobacter/)
+- **Chromate toxic-inversion example:** [open example](https://kpienta-cloud.github.io/geobacter/?layer=contrast&node=compound%3Achromate)
+- **Contrast matrix view:** open the browser and click **Matrix**
+- **Data tables:** see [`geotoxgraph/`](./geotoxgraph/)
 
 ## Contents
 
