@@ -23,7 +23,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
-BASE = Path("/home/user/workspace/geotoxgraph")
+BASE = Path(__file__).resolve().parent
 NODES_IN = BASE / "geotoxgraph_nodes.csv"
 EDGES_IN = BASE / "geotoxgraph_edges.csv"
 

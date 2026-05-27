@@ -89,6 +89,12 @@ python3 -m http.server 8000
 # then open http://localhost:8000/
 ```
 
+`app.py` is an optional Streamlit wrapper that launches the same static browser
+inside a Streamlit page (`streamlit run app.py`). It is not required for the
+GitHub Pages deployment; use the plain HTTP server above if Streamlit is not
+installed. Source URLs left blank in the CSVs indicate that no direct primary
+source has been curated for that row, not that one does not exist.
+
 ### Deploy on GitHub Pages
 
 1. Push the repository to GitHub.

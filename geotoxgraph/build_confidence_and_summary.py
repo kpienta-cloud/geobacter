@@ -33,7 +33,8 @@ OUTCOME_LABELS = {
     "nephrotoxicity_response": "renal stress response",
     "chlororespiration": "chlororespiration",
     "oxidation_conjugation_toxicity": "oxidation / GSH toxicity",
-    "detoxtification_route": "detoxification route",
+    "detoxification_route": "detoxification route",
+    "detoxtification_route": "detoxification route",  # legacy alias for misspelled key
     "toxicity_prone_metabolism": "toxicity-prone metabolism",
     "conserved_chemistry": "conserved chemistry",
     "lost_catabolic_pathway": "lost catabolic pathway",

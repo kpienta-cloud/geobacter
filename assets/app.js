@@ -228,24 +228,28 @@
       ].join(' ').toLowerCase();
     }
 
-    const edges = edgesRaw.map((r) => ({
-      edge_id: r.edge_id,
-      source: r.source_id,
-      target: r.target_id,
-      predicate: r.predicate || '',
-      enzyme_or_system: r.enzyme_or_system || '',
-      strain_id: r.strain_id || '',
-      module_id: r.module_id || '',
-      module_ids: splitList(r.module_id),
-      evidence_tier: (r.evidence_tier || '').trim(),
-      evidence_type: r.evidence_type || '',
-      effect: r.effect || '',
-      source_url: r.source_url || '',
-      notes: r.notes || '',
-      confidence_score: r.confidence_score || '',
-      overclaim_flags: r.overclaim_flags || '',
-      outcome_label: r.outcome_label || '',
-    }));
+    const edges = edgesRaw.map((r) => {
+      // Normalize legacy misspelling.
+      const effect = (r.effect === 'detoxtification_route' ? 'detoxification_route' : (r.effect || ''));
+      return {
+        edge_id: r.edge_id,
+        source: r.source_id,
+        target: r.target_id,
+        predicate: r.predicate || '',
+        enzyme_or_system: r.enzyme_or_system || '',
+        strain_id: r.strain_id || '',
+        module_id: r.module_id || '',
+        module_ids: splitList(r.module_id),
+        evidence_tier: (r.evidence_tier || '').trim(),
+        evidence_type: r.evidence_type || '',
+        effect,
+        source_url: r.source_url || '',
+        notes: r.notes || '',
+        confidence_score: r.confidence_score || '',
+        overclaim_flags: r.overclaim_flags || '',
+        outcome_label: r.outcome_label || '',
+      };
+    });
 
     state.nodes = nodes;
     state.edges = edges;
@@ -444,12 +448,12 @@
       onFilterChange,
     );
 
-    // Tiers (chips)
+    // Tiers (chips) — only show tier chips that have at least one edge in the active layer.
     const tierCounts = uniqueValues(state.edges, 'evidence_tier');
     const tierOrder = ['1', '2', '3', '4'];
     const tierItems = tierOrder
       .map((t) => [t, (tierCounts.find(([v]) => v === t) || [, 0])[1]])
-      .filter(([, c]) => c > 0 || ['1','2','3','4'].includes(state.filters.tiers.has));
+      .filter(([, c]) => c > 0);
     buildChipGroup(
       $('#filter-tiers'),
       tierItems,
@@ -578,8 +582,16 @@
         el('td', {}, splitPipeList(row.human_tissue_context).length
           ? splitPipeList(row.human_tissue_context).map((t) => matrixBadge(t, 'tissue'))
           : [el('span', { class: 'matrix-empty' }, '—')]),
-        el('td', { class: 'matrix-route' }, row.microbial_route || '—'),
-        el('td', { class: 'matrix-route' }, row.human_route || '—'),
+        el('td', { class: 'matrix-route' }, [
+          row.microbial_route
+            ? document.createTextNode(row.microbial_route)
+            : el('span', { class: 'matrix-empty', title: 'No curated microbial route in this dataset' }, 'No curated microbial route'),
+        ]),
+        el('td', { class: 'matrix-route' }, [
+          row.human_route
+            ? document.createTextNode(row.human_route)
+            : el('span', { class: 'matrix-empty', title: 'No curated human route in this dataset' }, 'No curated human route'),
+        ]),
         el('td', { class: 'matrix-confidence' }, [
           el('span', { class: `confidence-bar ${confidenceClass(score)}` }, [
             el('span', { style: `width:${Math.max(4, Math.min(100, score * 100))}%` }),
@@ -651,16 +663,15 @@
   function updateCounts({ visibleNodes, visibleEdges }) {
     const c = $('#counts');
     if (c) c.textContent = `${visibleNodes.size}/${state.nodes.length} nodes · ${visibleEdges.length}/${state.edges.length} edges`;
-    const sn = $('#stat-nodes'); if (sn) sn.textContent = state.nodes.length;
-    const se = $('#stat-edges'); if (se) se.textContent = state.edges.length;
-    const ss = $('#stat-strains');
-    if (ss) ss.textContent = new Set(state.nodes.filter(n => n.strain_id).map(n => n.strain_id)).size;
-    const sm = $('#stat-modules');
-    if (sm) {
-      const allMods = new Set();
-      for (const n of state.nodes) for (const m of n.module_ids) allMods.add(m);
-      sm.textContent = allMods.size;
-    }
+    // Stats targets may appear in #detail and #mobile-detail simultaneously, so target
+    // them by class to avoid duplicate-id conflicts.
+    const setAll = (sel, val) => $$(sel).forEach((node) => { node.textContent = val; });
+    setAll('.stat-nodes', String(state.nodes.length));
+    setAll('.stat-edges', String(state.edges.length));
+    setAll('.stat-strains', String(new Set(state.nodes.filter(n => n.strain_id).map(n => n.strain_id)).size));
+    const allMods = new Set();
+    for (const n of state.nodes) for (const m of n.module_ids) allMods.add(m);
+    setAll('.stat-modules', String(allMods.size));
   }
 
   // ----- Graph rendering -----
@@ -1049,40 +1060,93 @@
     return card;
   }
 
-  function humanizeOutcome(effect) {
-    const map = {
-      detoxification: 'Detoxification',
-      methylation_efflux: 'Methylation + efflux',
-      catabolism: 'Catabolism',
-      oxidation: 'Oxidation',
-      conjugation_excretion: 'Conjugation + excretion',
-      dearomatization: 'Dearomatization',
-      extracellular_reduction: 'Extracellular reduction',
-      genotoxicity: 'DNA damage / genotoxicity',
-      redox_transformation: 'Redox transformation',
-      bioactivation: 'Bioactivation',
-      immobilization: 'Immobilization',
-      nephrotoxicity_response: 'Renal stress response',
-      chlororespiration: 'Chlororespiration',
-      oxidation_conjugation_toxicity: 'Oxidation / GSH toxicity',
-      detoxtification_route: 'Detoxification route',
-      toxicity_prone_metabolism: 'Toxicity-prone metabolism',
-      conserved_chemistry: 'Conserved chemistry',
-      lost_catabolic_pathway: 'Lost catabolic pathway',
-      excretion_not_catabolism: 'Excretion, not catabolism',
-      toxic_inversion: 'Toxic inversion',
-      stress_not_respiration: 'Stress response, not respiration',
-      lost_respiration: 'Lost respiration',
-    };
-    return map[effect] || String(effect || 'Outcome not specified').replace(/_/g, ' ');
+  // Mirrors OUTCOME_LABELS in geotoxgraph/build_confidence_and_summary.py.
+  const OUTCOME_LABELS = {
+    detoxification: 'Detoxification',
+    detoxification_route: 'Detoxification route',
+    detoxtification_route: 'Detoxification route', // legacy alias
+    methylation_efflux: 'Methylation + efflux',
+    catabolism: 'Catabolism',
+    oxidation: 'Oxidation',
+    oxidation_conjugation: 'Oxidation / conjugation',
+    conjugation_excretion: 'Conjugation + excretion',
+    dearomatization: 'Dearomatization',
+    extracellular_reduction: 'Extracellular reduction',
+    genotoxicity: 'DNA damage / genotoxicity',
+    redox_transformation: 'Redox transformation',
+    redox_thiol_overlap: 'Redox thiol overlap',
+    bioactivation: 'Bioactivation',
+    immobilization: 'Immobilization',
+    nephrotoxicity_response: 'Renal stress response',
+    chlororespiration: 'Chlororespiration',
+    oxidation_conjugation_toxicity: 'Oxidation / GSH toxicity',
+    toxicity_prone_metabolism: 'Toxicity-prone metabolism',
+    conserved_chemistry: 'Conserved chemistry',
+    lost_catabolic_pathway: 'Lost catabolic pathway',
+    excretion_not_catabolism: 'Excretion, not catabolism',
+    toxic_inversion: 'Toxic inversion',
+    stress_not_respiration: 'Stress response, not respiration',
+    lost_respiration: 'Lost respiration',
+    biosorption_biomineralization: 'Biosorption / biomineralization',
+    renal_tubular_toxicity: 'Renal tubular toxicity',
+    renal_toxicity: 'Renal toxicity',
+    renal_toxicity_handling: 'Renal toxicity handling',
+    volatilization_detoxification: 'Volatilization / detoxification',
+    demethylation_reduction: 'Demethylation / reduction',
+    neurotoxicity: 'Neurotoxicity',
+    neurotoxicity_oxidative_stress: 'Neurotoxicity / oxidative stress',
+    detoxification_vs_neurotoxicity: 'Detoxification vs neurotoxicity',
+    detoxification_vs_host_toxicity: 'Detoxification vs host toxicity',
+    potential_catabolism: 'Potential catabolism',
+    potential_environmental_catabolism: 'Potential environmental catabolism',
+    bone_marrow_toxicity: 'Bone marrow toxicity',
+    catabolism_vs_marrow_toxicity: 'Catabolism vs marrow toxicity',
+    DNA_adduct_genotoxicity: 'DNA adduct genotoxicity',
+    DNA_adduct_bioactivation: 'DNA adduct bioactivation',
+    DNA_alkylation: 'DNA alkylation',
+    environmental_catabolism_vs_dna_adducts: 'Environmental catabolism vs DNA adducts',
+    bladder_bioactivation: 'Bladder bioactivation',
+    no_host_catabolism: 'No host catabolism',
+    epoxide_liver_carcinogenesis: 'Epoxide liver carcinogenesis',
+    epoxide_bioactivation: 'Epoxide bioactivation',
+    food_mycotoxin_host_bioactivation: 'Food mycotoxin host bioactivation',
+    detoxication_or_DNA_adducts: 'Detoxication or DNA adducts',
+    local_detox_capacity: 'Local detox capacity',
+    local_detox_vs_DNA_damage: 'Local detox vs DNA damage',
+    reductive_dechlorination_context: 'Reductive dechlorination context',
+    dihaloelimination_to_ethene: 'Dihaloelimination to ethene',
+    host_stress_response: 'Host stress response',
+    bioactivation_marrow_toxicity: 'Bioactivation / marrow toxicity',
+    hematotoxicity: 'Hematotoxicity',
+    hepatic_activation: 'Hepatic activation',
+    hepatic_metabolism: 'Hepatic metabolism',
+    hepatocarcinogenesis: 'Hepatocarcinogenesis',
+    lung_activation: 'Lung activation',
+    esophageal_DNA_damage: 'Esophageal DNA damage',
+    human_exposure_handling: 'Human exposure handling',
+  };
+
+  function humanizeOutcome(effectOrEdge) {
+    // Accept either a raw effect string or an edge object with outcome_label/effect.
+    if (effectOrEdge && typeof effectOrEdge === 'object') {
+      const label = String(effectOrEdge.outcome_label || '').trim();
+      if (label) return label.charAt(0).toUpperCase() + label.slice(1);
+      return humanizeOutcome(effectOrEdge.effect);
+    }
+    const effect = effectOrEdge;
+    if (!effect) return 'Outcome not specified';
+    if (OUTCOME_LABELS[effect]) return OUTCOME_LABELS[effect];
+    // Fallback: humanize an unknown underscore label without surfacing the raw form.
+    const spaced = String(effect).replace(/_/g, ' ');
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
   }
 
   function outcomeKind(effect, nodeType) {
     const e = String(effect || '').toLowerCase();
-    if (nodeType === 'microbe' && /catabolism|immobilization|chlororespiration|detox|extracellular|redox/.test(e)) return 'microbial-benefit';
-    if (/genotoxic|bioactivation|toxicity|nephro|stress|damage/.test(e)) return 'human-risk';
-    if (/conjugation|efflux|methylation|excretion/.test(e)) return 'human-handling';
-    if (/lost|inversion/.test(e)) return 'contrast-warning';
+    if (nodeType === 'microbe' && /catabolism|immobilization|chlororespiration|detox|extracellular|redox|dearomatization|dihaloelimination|biosorption|biomineralization|reductive_dechlorination|volatilization/.test(e)) return 'microbial-benefit';
+    if (/genotox|bioactivation|toxicity|nephro|stress|damage|carcinogen|alkylation|adduct|hepato|hemato|marrow|neuro|esophag|bladder|epoxide/.test(e)) return 'human-risk';
+    if (/conjugation|efflux|methylation|excretion|handling|local_detox/.test(e)) return 'human-handling';
+    if (/lost|inversion|no_host|not_catabolism|not_respiration/.test(e)) return 'contrast-warning';
     return 'neutral';
   }
 
@@ -1094,7 +1158,7 @@
       return {
         node,
         effect: edge?.effect || '',
-        outcome: humanizeOutcome(edge?.effect),
+        outcome: humanizeOutcome(edge),
         kind: outcomeKind(edge?.effect, node.node_type),
         edge,
       };
@@ -1118,8 +1182,8 @@
 
     function row(label, routes, side) {
       const route = routes[0];
-      const nodeLabel = route?.node?.label || 'No linked route';
-      const outcome = route?.outcome || 'Outcome not specified';
+      const nodeLabel = route?.node?.label || (side === 'microbe' ? 'No curated microbial route' : 'No curated human route');
+      const outcome = route?.outcome || 'Outcome not curated';
       const kind = route?.kind || 'neutral';
       return el('div', { class: `sankey-row ${side}` }, [
         el('div', { class: 'sankey-node exposure' }, [el('span', {}, compound.label), renderOutcomeChip('exposure', 'neutral')]),
@@ -1171,7 +1235,7 @@
           el('span', { class: 'tier', style: `color: ${getComputedStyle(document.documentElement).getPropertyValue(`--t-${e.evidence_tier}`).trim()};` }, `T${e.evidence_tier || '?'}`),
         ]),
         el('div', { class: 'meta' }, [
-          e.effect ? el('span', {}, e.effect) : null,
+          (e.effect || e.outcome_label) ? el('span', {}, humanizeOutcome(e)) : null,
           e.evidence_type ? el('span', {}, e.evidence_type) : null,
           e.confidence_score ? el('span', { class: 'confidence-pill' }, `confidence ${e.confidence_score}`) : null,
           e.overclaim_flags && e.overclaim_flags !== 'none' ? el('span', { class: 'flag-pill' }, e.overclaim_flags.replaceAll(';', ' · ')) : null,
@@ -1222,11 +1286,11 @@
     panel.appendChild(renderSankeyFlow(compound, microbial, human, Array.from(contrastNodes.values())));
 
     panel.appendChild(el('div', { class: 'compare-grid' }, [
-      renderMiniNodeList('Geobacter route', microbial, 'No microbial route linked for this compound.'),
-      renderMiniNodeList('Human route', human, 'No human exposure-handling route linked for this compound.'),
-      renderMiniNodeList('Contrast class', Array.from(contrastNodes.values()), 'No contrast class linked yet.'),
-      renderMiniNodeList('Shared chemistry / process', Array.from(processNodes.values()), 'No shared process linked yet.'),
-      renderMiniNodeList('Human tissue context', Array.from(tissueNodes.values()), 'No tissue context linked yet.'),
+      renderMiniNodeList('Geobacter route', microbial, 'No curated microbial route linked for this compound in this dataset — absence does not imply no route exists in nature.'),
+      renderMiniNodeList('Human route', human, 'No curated human exposure-handling route linked for this compound in this dataset — absence does not imply no route exists in nature.'),
+      renderMiniNodeList('Contrast class', Array.from(contrastNodes.values()), 'No contrast class curated yet.'),
+      renderMiniNodeList('Shared chemistry / process', Array.from(processNodes.values()), 'No shared process curated yet.'),
+      renderMiniNodeList('Human tissue context', Array.from(tissueNodes.values()), 'No tissue context curated yet.'),
     ]));
 
     panel.appendChild(renderEvidenceList(evidenceEdges));
@@ -1285,7 +1349,7 @@
     ]);
 
     const meta = el('div', { class: 'meta' });
-    if (e.effect) meta.appendChild(el('span', {}, e.effect));
+    if (e.effect || e.outcome_label) meta.appendChild(el('span', {}, humanizeOutcome(e)));
     if (e.enzyme_or_system) meta.appendChild(el('span', {}, e.enzyme_or_system));
     if (e.evidence_type) meta.appendChild(el('span', {}, e.evidence_type));
     if (e.confidence_score) meta.appendChild(el('span', { class: 'confidence-pill' }, `confidence ${e.confidence_score}`));
@@ -1307,10 +1371,10 @@
       el('h3', {}, 'No selection'),
       el('p', {}, 'Click a node in the graph to view its details, identifiers, and connected edges.'),
       el('dl', { class: 'meta-grid' }, [
-        el('dt', {}, 'Nodes'), el('dd', { id: 'stat-nodes' }, String(state.nodes.length)),
-        el('dt', {}, 'Edges'), el('dd', { id: 'stat-edges' }, String(state.edges.length)),
-        el('dt', {}, 'Strains'), el('dd', { id: 'stat-strains' }, String(new Set(state.nodes.filter(n => n.strain_id).map(n => n.strain_id)).size)),
-        el('dt', {}, 'Modules'), el('dd', { id: 'stat-modules' }, String((() => { const s = new Set(); for (const n of state.nodes) for (const m of n.module_ids) s.add(m); return s.size; })())),
+        el('dt', {}, 'Nodes'), el('dd', { class: 'stat-nodes' }, String(state.nodes.length)),
+        el('dt', {}, 'Edges'), el('dd', { class: 'stat-edges' }, String(state.edges.length)),
+        el('dt', {}, 'Strains'), el('dd', { class: 'stat-strains' }, String(new Set(state.nodes.filter(n => n.strain_id).map(n => n.strain_id)).size)),
+        el('dt', {}, 'Modules'), el('dd', { class: 'stat-modules' }, String((() => { const s = new Set(); for (const n of state.nodes) for (const m of n.module_ids) s.add(m); return s.size; })())),
       ]),
       el('p', { class: 'muted' }, [
         'Schema: strain → module → mechanism → compound.',
@@ -1441,33 +1505,99 @@
     }, 120);
   }
 
-  function exportGraphSvg() {
+  // Build a self-contained SVG clone with essential graph styling inlined so the
+  // exported file renders correctly outside this page (no external CSS available).
+  function buildExportSvgClone() {
     const svg = $('#graph-svg');
-    if (!svg) return;
+    if (!svg) return null;
     const clone = svg.cloneNode(true);
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     const { width, height } = svg.getBoundingClientRect();
-    clone.setAttribute('width', String(Math.round(width)));
-    clone.setAttribute('height', String(Math.round(height)));
-    clone.setAttribute('viewBox', `0 0 ${Math.round(width)} ${Math.round(height)}`);
-    const style = document.createElement('style');
-    style.textContent = `
-      .link{stroke-opacity:.55;fill:none}.node-label{font:11px sans-serif;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}.body{stroke:#fff;stroke-width:1.5}
+    const w = Math.round(width);
+    const h = Math.round(height);
+    clone.setAttribute('width', String(w));
+    clone.setAttribute('height', String(h));
+    clone.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    const css = getComputedStyle(document.documentElement);
+    const cv = (name, fallback) => (css.getPropertyValue(name).trim() || fallback);
+    const bg = (getComputedStyle(document.body).backgroundColor || '#0b1418');
+    const text = cv('--c-text-soft', '#cfd6db');
+    const accent = cv('--c-accent', '#34d6c0');
+    const tier = {
+      '1': cv('--t-1', '#34d6c0'),
+      '2': cv('--t-2', '#6dc7ff'),
+      '3': cv('--t-3', '#b48bf2'),
+      '4': cv('--t-4', '#6c7a82'),
+    };
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `
+      svg { background: ${bg}; }
+      .link { stroke-opacity: 0.55; fill: none; }
+      .link.t-1 { stroke: ${tier['1']}; stroke-width: 1.6; }
+      .link.t-2 { stroke: ${tier['2']}; stroke-width: 1.2; }
+      .link.t-3 { stroke: ${tier['3']}; stroke-width: 1.0; }
+      .link.t-4 { stroke: ${tier['4']}; stroke-width: 1.0; stroke-dasharray: 3 3; }
+      .link.dim { opacity: 0.1; }
+      .node .body { stroke: ${bg}; stroke-width: 1.5; }
+      .node[data-selected="true"] .body { stroke: ${accent}; stroke-width: 2.4; }
+      .node.dim { opacity: 0.2; }
+      .node-label {
+        font: 10.5px -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        fill: ${text};
+        paint-order: stroke;
+        stroke: ${bg};
+        stroke-width: 3px;
+        stroke-linejoin: round;
+        pointer-events: none;
+      }
     `;
-    clone.insertBefore(style, clone.firstChild);
-    const xml = new XMLSerializer().serializeToString(clone);
+    clone.insertBefore(styleEl, clone.firstChild);
+
+    // Inline per-element styling that depends on data (node colors, arrow fills).
+    // The clone's children are positionally aligned with the live SVG, so iterate by
+    // data instead of by selector to keep this resilient.
+    const liveNodes = svg.querySelectorAll('g.node');
+    const cloneNodes = clone.querySelectorAll('g.node');
+    for (let i = 0; i < cloneNodes.length; i++) {
+      const live = liveNodes[i];
+      const cn = cloneNodes[i];
+      const body = cn.querySelector('circle.body');
+      const liveBody = live?.querySelector('circle.body');
+      if (body && liveBody) {
+        const fill = liveBody.getAttribute('fill') || getComputedStyle(liveBody).fill;
+        if (fill) body.setAttribute('fill', fill);
+      }
+    }
+    // Ensure arrowhead markers carry an explicit fill (already set inline in setupSvg,
+    // but re-assert in case theme changed).
+    clone.querySelectorAll('marker path').forEach((p) => {
+      const m = p.parentNode.id;
+      const t = m.replace('arrow-t', '');
+      if (tier[t]) p.setAttribute('fill', tier[t]);
+    });
+
+    // Insert a background rect so the bg color is part of the exported raster too.
+    const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bgRect.setAttribute('width', String(w));
+    bgRect.setAttribute('height', String(h));
+    bgRect.setAttribute('fill', bg);
+    clone.insertBefore(bgRect, styleEl.nextSibling);
+
+    return { clone, width: w, height: h, bg };
+  }
+
+  function exportGraphSvg() {
+    const built = buildExportSvgClone();
+    if (!built) return;
+    const xml = new XMLSerializer().serializeToString(built.clone);
     triggerDownload(`geotoxgraph-${state.layer}-figure.svg`, xml, 'image/svg+xml');
   }
 
   async function exportGraphPng() {
-    const svg = $('#graph-svg');
-    if (!svg) return;
-    const { width, height } = svg.getBoundingClientRect();
-    const clone = svg.cloneNode(true);
-    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    clone.setAttribute('width', String(Math.round(width)));
-    clone.setAttribute('height', String(Math.round(height)));
-    clone.setAttribute('viewBox', `0 0 ${Math.round(width)} ${Math.round(height)}`);
+    const built = buildExportSvgClone();
+    if (!built) return;
+    const { clone, width, height, bg } = built;
     const xml = new XMLSerializer().serializeToString(clone);
     const blob = new Blob([xml], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
@@ -1482,7 +1612,7 @@
     canvas.width = Math.max(1, Math.round(width * 2));
     canvas.height = Math.max(1, Math.round(height * 2));
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = getComputedStyle(document.body).backgroundColor || '#ffffff';
+    ctx.fillStyle = bg || '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     URL.revokeObjectURL(url);
@@ -1577,16 +1707,20 @@
   }
 
   function setRepoLink() {
-    // Best-effort: derive from window.location if on github.io
     const a = $('#repo-link');
+    if (!a) return;
     const host = location.hostname;
     if (host.endsWith('github.io')) {
       const user = host.split('.')[0];
       const path = location.pathname.replace(/^\//, '').split('/')[0];
       if (user && path) {
         a.href = `https://github.com/${user}/${path}`;
+        return;
       }
     }
+    // Fallback to the known canonical repository so the footer link is never the
+    // placeholder href when served from a non-github.io location (preview, fork, dev).
+    a.href = 'https://github.com/kpienta-cloud/geobacter';
   }
 
   async function renderActiveLayer({ restoreFromUrl = false } = {}) {
