@@ -4,7 +4,7 @@ This manuscript-support table summarizes the active contrast graph after applyin
 
 | Compound | Microbial route | Human route | Tissue context | Contrast class | Mean confidence | Flags |
 | --- | --- | --- | --- | --- | ---: | --- |
-| 1,2-Dichloroethane | Geobacter organohalide respiration and dechlorination | Human TCE/PCE CYP oxidation and GSH conjugation | Liver <br> Kidney / renal proximal tubule | Pathway loss | 0.87 | outcome_inferred;enzyme_unresolved;species_generalized |
+| 1,2-Dichloroethane | Geobacter organohalide respiration and dechlorination | Human TCE/PCE CYP oxidation and GSH conjugation | Liver <br> Kidney / renal proximal tubule | Pathway loss <br> Ancient catabolic loss | 0.87 | outcome_inferred;enzyme_unresolved;species_generalized |
 | 4-Aminobiphenyl | — | Human aromatic amine CYP/NAT bladder bioactivation | Bladder urothelium | Toxic inversion <br> Pathway loss <br> Polymorphic loss <br> Human-lineage loss <br> Ecosystem-outsourced capacity | 0.85 | outcome_inferred;microbiome_candidate;species_generalized |
 | Acetaldehyde | — | Human acetaldehyde ALDH2 and esophageal DNA damage | Esophageal epithelium | Host-shifted handling <br> Polymorphic loss | 0.89 | outcome_inferred |
 | Aflatoxin B1 | — | Human aflatoxin CYP epoxidation/GST liver handling | Liver | Toxic inversion <br> Host-shifted handling <br> Polymorphic loss <br> Ecosystem-outsourced capacity | 0.86 | outcome_inferred;microbiome_candidate;species_generalized |
@@ -20,11 +20,11 @@ This manuscript-support table summarizes the active contrast graph after applyin
 | Methylmercury | Microbial mer mercury detoxification | Human methylmercury thiol/GSH neurotoxicity | Central nervous system | Host-shifted handling | 0.77 | species_generalized;outcome_inferred |
 | N-Nitrosodimethylamine NDMA | — | Human nitrosamine CYP2E1 activation and MGMT repair | Liver | Toxic inversion <br> Pathway loss <br> Polymorphic loss <br> Ecosystem-outsourced capacity | 0.86 | outcome_inferred;microbiome_candidate;species_generalized |
 | Phenol | Geobacter Bam/Benzoyl-CoA anaerobic aromatics pathway | Human CYP2E1 aromatic oxidation | — | Pathway loss | 0.77 | outcome_inferred;tissue_generalized;species_generalized |
-| Tetrachloroethene PCE | Geobacter organohalide respiration and dechlorination | Human TCE/PCE CYP oxidation and GSH conjugation | Liver <br> Kidney / renal proximal tubule | Pathway loss | 0.87 | enzyme_unresolved;outcome_inferred;species_generalized |
+| Tetrachloroethene PCE | Geobacter organohalide respiration and dechlorination <br> Dehalococcoides complete dechlorination to ethene | Human TCE/PCE CYP oxidation and GSH conjugation | Liver <br> Kidney / renal proximal tubule | Pathway loss <br> Ancient catabolic loss | 0.88 | enzyme_unresolved;species_generalized;outcome_inferred |
 | Toluene | Geobacter Bam/Benzoyl-CoA anaerobic aromatics pathway | Human CYP2E1 aromatic oxidation | — | Pathway loss | 0.77 | tissue_generalized;outcome_inferred;species_generalized |
-| Trichloroethene TCE | Geobacter organohalide respiration and dechlorination | Human TCE/PCE CYP oxidation and GSH conjugation | Liver <br> Kidney / renal proximal tubule | Pathway loss | 0.87 | enzyme_unresolved;outcome_inferred;species_generalized |
+| Trichloroethene TCE | Geobacter organohalide respiration and dechlorination <br> Dehalococcoides complete dechlorination to ethene | Human TCE/PCE CYP oxidation and GSH conjugation | Liver <br> Kidney / renal proximal tubule | Pathway loss <br> Ancient catabolic loss | 0.88 | enzyme_unresolved;species_generalized;outcome_inferred |
 | Uranium(VI) | Geobacter U(VI) to U(IV) biofilm immobilization | Human uranium nephrotoxicity and metallothionein stress response | — | Host-shifted handling | 0.75 | tissue_generalized;outcome_inferred |
-| Vinyl chloride | Geobacter organohalide respiration and dechlorination | Human TCE/PCE CYP oxidation and GSH conjugation | Liver <br> Kidney / renal proximal tubule | Pathway loss <br> Polymorphic loss <br> Ecosystem-outsourced capacity | 0.86 | species_generalized;outcome_inferred;microbiome_candidate;enzyme_unresolved |
+| Vinyl chloride | Geobacter organohalide respiration and dechlorination <br> Dehalococcoides complete dechlorination to ethene | Human TCE/PCE CYP oxidation and GSH conjugation | Liver <br> Kidney / renal proximal tubule | Pathway loss <br> Ancient catabolic loss <br> Polymorphic loss <br> Ecosystem-outsourced capacity | 0.87 | species_generalized;outcome_inferred;microbiome_candidate;enzyme_unresolved |
 | p-Cresol | Geobacter Bam/Benzoyl-CoA anaerobic aromatics pathway | Human CYP2E1 aromatic oxidation | — | Pathway loss | 0.77 | outcome_inferred;tissue_generalized;species_generalized |
 
 ## Scoring note
