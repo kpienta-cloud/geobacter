@@ -8,8 +8,8 @@ This manuscript-support table summarizes the active contrast graph after applyin
 | 4-Aminobiphenyl | — | Human aromatic amine CYP/NAT bladder bioactivation | Bladder urothelium | Toxic inversion <br> Pathway loss <br> Polymorphic loss <br> Human-lineage loss <br> Ecosystem-outsourced capacity | 0.85 | outcome_inferred;microbiome_candidate;species_generalized |
 | Acetaldehyde | — | Human acetaldehyde ALDH2 and esophageal DNA damage | Esophageal epithelium | Host-shifted handling <br> Polymorphic loss | 0.89 | outcome_inferred |
 | Aflatoxin B1 | — | Human aflatoxin CYP epoxidation/GST liver handling | Liver | Toxic inversion <br> Host-shifted handling <br> Polymorphic loss <br> Ecosystem-outsourced capacity | 0.86 | outcome_inferred;microbiome_candidate;species_generalized |
-| Arsenate As(V) | Geobacter ArsC/Acr3 arsenic detoxification | — | — | Conserved chemistry | 0.81 | outcome_inferred;tissue_generalized |
-| Arsenite As(III) | — | Human AS3MT/GSH/MRP arsenic handling | — | — | 0.91 | tissue_generalized;outcome_inferred |
+| Arsenate As(V) | Geobacter ArsC/Acr3 arsenic detoxification | — | — | Conserved chemistry <br> Polymorphic loss | 0.85 | outcome_inferred;tissue_generalized |
+| Arsenite As(III) | — | Human AS3MT/GSH/MRP arsenic handling | — | Polymorphic loss | 0.92 | tissue_generalized;outcome_inferred |
 | Benzene | Geobacter Bam/Benzoyl-CoA anaerobic aromatics pathway | Human benzene CYP2E1/NQO1 bone marrow toxicity | Bone marrow / hematopoietic niche | Pathway loss <br> Toxic inversion <br> Polymorphic loss | 0.81 | outcome_inferred;species_generalized |
 | Benzo[a]pyrene / PAH | Geobacter Bam/Benzoyl-CoA anaerobic aromatics pathway | Human PAH CYP1A1/1B1 DNA-adduct activation | Lung | Pathway loss <br> Toxic inversion <br> Polymorphic loss <br> Human-lineage loss | 0.81 | outcome_inferred;species_generalized |
 | Benzoate | — | Human benzoate glycine conjugation | — | Analogous function | 0.68 | tissue_generalized;outcome_inferred |
