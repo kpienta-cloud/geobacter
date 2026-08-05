@@ -34,3 +34,5 @@ overclaim_flags:
   tissue_generalized: Human mechanism is not localized to a specific tissue/cell type.
   outcome_inferred: Outcome label is inferred from mechanism rather than directly measured.
   microbiome_candidate: Candidate microbiome/environmental bridge not yet curated.
+  population_frequency_missing: Polymorphic-subclass annotation without cited gnomAD or 1000 Genomes population-stratified allele frequency.
+  pseudogene_reference_missing: Human-lineage annotation without cited HGNC pseudogene or pseudogene.org entry supporting the loss_mechanism assignment.

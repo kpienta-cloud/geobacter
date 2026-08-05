@@ -15,6 +15,59 @@ pathway_loss:
   examples:
     - organohalide respiration
     - anaerobic benzoyl-CoA reductive dearomatization
+  subclasses:
+    ancient_catabolic:
+      label: Ancient catabolic loss
+      definition: A catabolic route reconstructable in the last universal common ancestor or in early metazoans that has no host-cell equivalent in extant humans. Distinguishes ancient loss from lineage-specific or polymorphic loss.
+      required_fields:
+        - loss_mechanism
+      examples:
+        - anaerobic benzoyl-CoA reductive dearomatization
+        - organohalide respiration
+        - reductive dechlorination of chlorinated ethenes
+    human_lineage:
+      label: Human-lineage loss
+      definition: A pathway present in non-human primates or in humans' recent evolutionary neighbors but pseudogenized or lost in Homo sapiens specifically. Requires either a documented pseudogene entry OR a documented fixed loss-of-function variant.
+      required_fields:
+        - loss_mechanism
+      loss_mechanism_values:
+        - pseudogene
+        - fixed_lof_snv
+        - gene_deletion
+        - expression_loss
+      examples:
+        - GULO (L-gulonolactone oxidase, vitamin C synthesis) pseudogenized in haplorrhines
+        - uricase (UOX) pseudogenized in hominoids
+        - FMO2 nonsense variant fixed in most non-African populations
+        - MMP12 human-specific expression loss
+    polymorphic:
+      label: Polymorphic loss
+      definition: A pathway present in some humans and absent in others due to a common loss-of-function or reduced-function polymorphism. Not lineage-fixed; allele frequency and population structure matter.
+      required_fields:
+        - effect_magnitude
+        - allele_frequency
+      effect_magnitude_values:
+        - "null"
+        - severe
+        - moderate
+        - mild
+        - unknown
+      allele_frequency_populations:
+        - AFR
+        - AMR
+        - EAS
+        - EUR
+        - SAS
+      allele_frequency_source: gnomAD v4 superpopulation frequencies or 1000 Genomes Phase 3
+      examples:
+        - GSTM1-null (gene deletion, null effect)
+        - GSTT1-null (gene deletion, null effect)
+        - NAT2 slow acetylator haplotypes
+        - UGT1A1 *28 (TA repeat, moderate reduced function)
+        - CYP2D6 *4 poor metabolizer
+        - SULT1A1 *2 (Arg213His, moderate)
+        - NQO1 *2 (c.609C>T, null protein)
+        - ALDH2 *2 (Glu487Lys, severe reduced function)
 toxic_inversion:
   label: Toxic inversion
   definition: A transformation that can be environmentally detoxifying or respiratory in microbes becomes bioactivating or damage-prone in human cells.
@@ -25,3 +78,17 @@ host_shifted:
   definition: Human biology handles the exposure through sequestration, stress response, repair, distribution, inflammation, or tissue injury rather than full degradation.
   examples:
     - uranium nephrotoxicity and metallothionein-associated protection
+ecosystem_outsourced:
+  label: Ecosystem-outsourced capacity
+  definition: Capacity absent from human host cells but present in the human gut, oral, or skin microbiome, or in environmental compartments the host uses. Not a loss in the strict sense; a compartment shift.
+  required_fields:
+    - ecological_compartment
+  ecological_compartment_values:
+    - gut_microbiome
+    - oral_microbiome
+    - skin_microbiome
+    - environmental
+  examples:
+    - gut microbial azo-dye reduction (Clostridium, Eubacterium)
+    - oral microbial nitrate reduction
+    - gut microbial reductive dehalogenation
