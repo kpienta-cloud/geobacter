@@ -36,3 +36,4 @@ overclaim_flags:
   microbiome_candidate: Candidate microbiome/environmental bridge not yet curated.
   population_frequency_missing: Polymorphic-subclass annotation without cited gnomAD or 1000 Genomes population-stratified allele frequency.
   pseudogene_reference_missing: Human-lineage annotation without cited HGNC pseudogene or pseudogene.org entry supporting the loss_mechanism assignment.
+  bridge_target_unresolved: Bridge edge to ExposoGraph whose target node has not been confirmed against a live ExposoGraph release.
