@@ -1,8 +1,8 @@
 {
-  "base_nodes": 88,
-  "base_edges": 45,
-  "enriched_nodes": 139,
-  "enriched_edges": 163,
+  "base_nodes": 100,
+  "base_edges": 51,
+  "enriched_nodes": 151,
+  "enriched_edges": 169,
   "individual_kegg_loci_fetched": 40,
   "kegg_pathway_nodes": 8,
   "kegg_module_nodes": 1,
