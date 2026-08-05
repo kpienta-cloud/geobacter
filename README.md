@@ -39,11 +39,11 @@ The main package is in [`geotoxgraph/`](./geotoxgraph/).
 
 ## Current graph size
 
-- 114 enriched nodes
-- 147 directed edges
+- 114 enriched nodes (plus 82 evolutionary_contrast layer nodes)
+- 150 directed edges (plus 139 evolutionary_contrast edges)
 - 40 individual KEGG loci fetched
-- 51 nodes with KO IDs
-- 40 nodes with EC numbers
+- 52 nodes with KO IDs
+- 41 nodes with EC numbers
 - 21 compound nodes with PubChem and ChEBI IDs
 - 62 nodes with NCBI ProteinIDs
 
@@ -65,6 +65,22 @@ The browser also includes a **Human contrast map** layer. This layer compares Ge
 - organohalide respiration versus human CYP/GSH toxicity-prone handling
 - expanded exposure classes including cadmium, mercury, benzene, PAHs, aromatic amines, nitrosamines, aflatoxin B1, acetaldehyde, vinyl chloride, and chlorinated ethanes
 - tissue contexts including liver, kidney, lung, bladder, bone marrow, esophagus, and CNS
+
+### Pathway-loss subclasses (v3, August 2026)
+
+The pathway_loss contrast class now distinguishes three scales of lost carcinogen-handling capacity. Every pathway_loss annotation may carry a `contrast_subclass` tag when the evidence supports one.
+
+| Subclass | Scale | Example |
+| --- | --- | --- |
+| `ancient_catabolic` | Loss during metazoan or vertebrate evolution | Anaerobic benzoyl-CoA dearomatization; organohalide respiration |
+| `human_lineage` | Pseudogenization or fixed loss-of-function in Homo sapiens | GULO, uricase (UOX), FMO2, HPGD candidate |
+| `polymorphic` | Common human loss-of-function polymorphism (gnomAD-stratified) | GSTM1-null, GSTT1-null, NAT2 slow-acetylator, UGT1A1*28, NQO1*2, ALDH2*2, CYP2D6*4, SULT1A1*2, FMO3 LoF |
+
+A parallel `ecosystem_outsourced` contrast class now records capacities the host does not carry but that live in the gut or oral microbiome (azo reduction, nitrate reduction, reductive dehalogenation, beta-glucuronidase deconjugation).
+
+### Cross-graph bridge to ExposoGraph
+
+Polymorphic-subclass variants carry `has_polymorphic_analog_in_exposograph` edges pointing to ExposoGraph 2.0 enzyme nodes by string reference. ExposoGraph is treated as an external reference; GeoToxGraph does not import ExposoGraph node content. See `geotoxgraph_schema.md` for the bridge-edge specification.
 
 ## Curation note
 

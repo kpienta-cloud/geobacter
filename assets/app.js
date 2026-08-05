@@ -22,8 +22,12 @@
     'Conserved chemistry',
     'Analogous function',
     'Pathway loss',
+    'Ancient catabolic loss',
+    'Human-lineage loss',
+    'Polymorphic loss',
     'Toxic inversion',
     'Host-shifted handling',
+    'Ecosystem-outsourced capacity',
   ];
 
   // Display labels for known categorical values

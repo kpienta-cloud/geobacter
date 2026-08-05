@@ -575,8 +575,12 @@ body.matrix-mode .app {
 .matrix-badge.conserved-chemistry { color: var(--n-process); border-color: color-mix(in srgb, var(--n-process) 45%, var(--c-border)); }
 .matrix-badge.analogous-function { color: var(--c-link); border-color: color-mix(in srgb, var(--c-accent) 45%, var(--c-border)); }
 .matrix-badge.pathway-loss { color: var(--c-gold); border-color: color-mix(in srgb, var(--c-gold) 45%, var(--c-border)); }
+.matrix-badge.ancient-catabolic-loss { color: var(--c-gold); border-color: color-mix(in srgb, var(--c-gold) 55%, var(--c-border)); opacity: 0.85; }
+.matrix-badge.human-lineage-loss { color: var(--n-human); border-color: color-mix(in srgb, var(--n-human) 40%, var(--c-border)); }
+.matrix-badge.polymorphic-loss { color: var(--c-accent); border-color: color-mix(in srgb, var(--c-accent) 55%, var(--c-border)); }
 .matrix-badge.toxic-inversion { color: var(--n-human); border-color: color-mix(in srgb, var(--n-human) 45%, var(--c-border)); }
 .matrix-badge.host-shifted-handling { color: var(--n-tissue); border-color: color-mix(in srgb, var(--n-tissue) 45%, var(--c-border)); }
+.matrix-badge.ecosystem-outsourced-capacity { color: var(--n-process); border-color: color-mix(in srgb, var(--n-process) 55%, var(--c-border)); opacity: 0.85; }
 .matrix-badge.tissue { color: var(--n-tissue); }
 .matrix-badge.flag { color: var(--c-gold); }
 .matrix-badge.high { color: var(--c-link); }
