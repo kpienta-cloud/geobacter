@@ -38,7 +38,10 @@ pathway_loss:
       examples:
         - GULO (L-gulonolactone oxidase, vitamin C synthesis) pseudogenized in haplorrhines
         - uricase (UOX) pseudogenized in hominoids
-        - FMO2 nonsense variant fixed in most non-African populations
+        - GULO pseudogene (vitamin C synthesis) fixed in Homo sapiens
+        - UOX pseudogene (uric acid oxidation) fixed in Homo sapiens
+        # Note: FMO2 was previously listed here but was reclassified to `polymorphic` in v7
+        # because the functional (ancestral) allele segregates at MAF > 0.5 in African populations.
         - MMP12 human-specific expression loss
     polymorphic:
       label: Polymorphic loss

@@ -20,7 +20,7 @@ The `pathway_loss` class has three subclasses that distinguish scale and mechani
 | Subclass | Scale of loss | Required fields | Example |
 | --- | --- | --- | --- |
 | `microbial_only` | Loss during metazoan or vertebrate evolution; predates the primate radiation. | `loss_mechanism` | Anaerobic benzoyl-CoA reductive dearomatization; organohalide respiration. |
-| `human_lineage` | Loss during the primate lineage or after the human-chimp split. Fixed in Homo sapiens. | `loss_mechanism` | GULO (vitamin C synthesis), uricase (UOX), FMO2. |
+| `human_lineage` | Loss during the primate lineage or after the human-chimp split. Fixed in Homo sapiens across all populations, verified by primate-outgroup polarization. | `loss_mechanism` | GULO (vitamin C synthesis), uricase (UOX). FMO2 was moved from this class to `polymorphic` in the v7 audit because the ancestral (functional) allele segregates at MAF > 0.5 in African populations. |
 | `polymorphic` | Loss segregates as a common polymorphism within humans. | `effect_magnitude`, `allele_frequency` | GSTM1-null, GSTT1-null, NAT2 slow acetylator, UGT1A1*28, NQO1*2, ALDH2*2. |
 
 ### Required fields for pathway_loss subclasses
