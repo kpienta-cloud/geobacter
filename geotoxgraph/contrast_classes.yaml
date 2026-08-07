@@ -16,7 +16,7 @@ pathway_loss:
     - organohalide respiration
     - anaerobic benzoyl-CoA reductive dearomatization
   subclasses:
-    ancient_catabolic:
+    microbial_only:
       label: Ancient catabolic loss
       definition: A catabolic route reconstructable in the last universal common ancestor or in early metazoans that has no host-cell equivalent in extant humans. Distinguishes ancient loss from lineage-specific or polymorphic loss.
       required_fields:

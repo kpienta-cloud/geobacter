@@ -19,13 +19,13 @@ The `pathway_loss` class has three subclasses that distinguish scale and mechani
 
 | Subclass | Scale of loss | Required fields | Example |
 | --- | --- | --- | --- |
-| `ancient_catabolic` | Loss during metazoan or vertebrate evolution; predates the primate radiation. | `loss_mechanism` | Anaerobic benzoyl-CoA reductive dearomatization; organohalide respiration. |
+| `microbial_only` | Loss during metazoan or vertebrate evolution; predates the primate radiation. | `loss_mechanism` | Anaerobic benzoyl-CoA reductive dearomatization; organohalide respiration. |
 | `human_lineage` | Loss during the primate lineage or after the human-chimp split. Fixed in Homo sapiens. | `loss_mechanism` | GULO (vitamin C synthesis), uricase (UOX), FMO2. |
 | `polymorphic` | Loss segregates as a common polymorphism within humans. | `effect_magnitude`, `allele_frequency` | GSTM1-null, GSTT1-null, NAT2 slow acetylator, UGT1A1*28, NQO1*2, ALDH2*2. |
 
 ### Required fields for pathway_loss subclasses
 
-**`loss_mechanism`** enumerated values, required for `ancient_catabolic` and `human_lineage`:
+**`loss_mechanism`** enumerated values, required for `microbial_only` and `human_lineage`:
 
 - `pseudogene`: intact-looking coding sequence disrupted by premature stop, frameshift, or splice-site loss, cataloged in HGNC or pseudogene.org.
 - `fixed_lof_snv`: single-nucleotide loss-of-function variant fixed or near-fixed in Homo sapiens without pseudogenization.
@@ -70,7 +70,7 @@ Every manuscript-grade contrast assertion should eventually include:
 - `human_mechanism`
 - `contrast_class`
 - `contrast_subclass` (when class is `pathway_loss`)
-- `loss_mechanism` (when subclass is `ancient_catabolic` or `human_lineage`)
+- `loss_mechanism` (when subclass is `microbial_only` or `human_lineage`)
 - `effect_magnitude` (when subclass is `polymorphic`)
 - `allele_frequency` (when subclass is `polymorphic`)
 - `ecological_compartment` (when class is `ecosystem_outsourced`)

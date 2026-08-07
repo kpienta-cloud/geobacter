@@ -128,7 +128,18 @@ def confidence_and_flags(edge: dict) -> tuple[str, str]:
     if any(k in text for k in ["unresolved", "rdase_unresolved"]):
         score -= 0.08
         flags.add("enzyme_unresolved")
-    if any(k in text for k in ["environmental_microbes", "review_literature", "not asserted", "general microbial", "ecosystem"]):
+    # NOTE: matches whole tokens only. Previously the bare token 'ecosystem'
+    # was matched as a substring, which flagged every ecosystem-outsourced
+    # edge (~14 of the resource's 36 species_generalized flags were pure
+    # string artifacts from edge_ids containing 'ecosystem'). Fixed in the
+    # v6 audit revision to require a genuine species-generalization signal.
+    species_generalization_signals = [
+        "environmental_microbes",  # strain_id shorthand for uncultured refs
+        "review_literature",       # review-level evidence_type
+        "not asserted",            # explicit hedging text in notes
+        "general microbial",       # multi-word prose hedge
+    ]
+    if any(k in text for k in species_generalization_signals):
         score -= 0.08
         flags.add("species_generalized")
     if edge.get("target_id", "").startswith("human:") and "tissue" not in text and edge.get("module_id") != "tissue_context":
