@@ -17,8 +17,8 @@ pathway_loss:
     - anaerobic benzoyl-CoA reductive dearomatization
   subclasses:
     microbial_only:
-      label: Ancient catabolic loss
-      definition: A catabolic route reconstructable in the last universal common ancestor or in early metazoans that has no host-cell equivalent in extant humans. Distinguishes ancient loss from lineage-specific or polymorphic loss.
+      label: Microbial-only reference chemistry
+      definition: A catabolic route retained in microbes but with no host-cell equivalent in extant humans, either because it was lost during metazoan or vertebrate evolution (predates the primate radiation) or because it never existed in the animal lineage. Distinguishes microbial-only reference chemistry from human-lineage or polymorphic loss.
       required_fields:
         - loss_mechanism
       examples:

@@ -15,6 +15,13 @@
       label: 'Human contrast map',
       nodesUrl: 'geotoxgraph/evolutionary_contrast_nodes.csv',
       edgesUrl: 'geotoxgraph/evolutionary_contrast_edges.csv',
+      // Base-layer compound nodes referenced by contrast edges but stored in
+      // geotoxgraph_nodes.csv. Loaded in addition to the primary nodesUrl and
+      // filtered to only those ids actually referenced by contrast edges, so the
+      // Human contrast map view is self-consistent for D3 forceLink resolution.
+      // Kept in a separate load path (rather than merging into evolutionary_contrast_nodes.csv)
+      // to preserve the manuscript's base-vs-contrast layer separation on disk.
+      supportNodesUrl: 'geotoxgraph/geotoxgraph_nodes.csv',
     },
   };
   const SUMMARY_URL = 'geotoxgraph/compound_contrast_summary.csv';
@@ -22,7 +29,7 @@
     'Conserved chemistry',
     'Analogous function',
     'Pathway loss',
-    'Ancient catabolic loss',
+    'Microbial-only reference chemistry',
     'Human-lineage loss',
     'Polymorphic loss',
     'Toxic inversion',
@@ -189,10 +196,29 @@
   // ----- Load + parse -----
   async function loadData() {
     const layer = LAYERS[state.layer] || LAYERS.geotox;
-    const [nodesRaw, edgesRaw] = await Promise.all([
-      d3.csv(layer.nodesUrl),
-      d3.csv(layer.edgesUrl),
-    ]);
+    const fetches = [d3.csv(layer.nodesUrl), d3.csv(layer.edgesUrl)];
+    if (layer.supportNodesUrl) fetches.push(d3.csv(layer.supportNodesUrl));
+    const results = await Promise.all(fetches);
+    const nodesRaw = results[0];
+    const edgesRaw = results[1];
+    const supportRaw = layer.supportNodesUrl ? results[2] : [];
+
+    // Union in support nodes only for ids referenced by the primary edges but
+    // missing from the primary node set. Guarantees d3.forceLink resolves.
+    if (supportRaw.length) {
+      const primaryIds = new Set(nodesRaw.map((r) => r.id));
+      const referenced = new Set();
+      for (const e of edgesRaw) {
+        if (e.source_id) referenced.add(e.source_id);
+        if (e.target_id) referenced.add(e.target_id);
+      }
+      for (const r of supportRaw) {
+        if (referenced.has(r.id) && !primaryIds.has(r.id)) {
+          nodesRaw.push(r);
+          primaryIds.add(r.id);
+        }
+      }
+    }
 
     const nodes = nodesRaw.map((r) => ({
       id: r.id,
@@ -672,7 +698,19 @@
     const setAll = (sel, val) => $$(sel).forEach((node) => { node.textContent = val; });
     setAll('.stat-nodes', String(state.nodes.length));
     setAll('.stat-edges', String(state.edges.length));
-    setAll('.stat-strains', String(new Set(state.nodes.filter(n => n.strain_id).map(n => n.strain_id)).size));
+    // Exclude pseudo-strain buckets that aren't real organism strains, but only when
+    // real strain codes are also present. On the contrast layer, strain_id holds only
+    // higher-level bucket names ('environmental_microbes', 'geobacter', 'human_host',
+    // 'shared'); the strain resolution is inherited from the base layer. Keeping the
+    // pseudo buckets there shows the reader the four coarse groupings the contrast
+    // layer uses. On the strain map, we drop 'shared' so the count matches the
+    // manuscript's 13 microbial strains.
+    const PSEUDO_STRAINS = new Set(['shared', 'geobacter', 'environmental_microbes', 'human_host']);
+    const allStrainIds = new Set(state.nodes.filter(n => n.strain_id).map(n => n.strain_id));
+    const realStrainIds = new Set([...allStrainIds].filter(s => !PSEUDO_STRAINS.has(s)));
+    // Use the real-strain count when any real strains exist, otherwise fall back to
+    // the full set so the contrast layer still reports its coarse buckets.
+    setAll('.stat-strains', String(realStrainIds.size > 0 ? realStrainIds.size : allStrainIds.size));
     const allMods = new Set();
     for (const n of state.nodes) for (const m of n.module_ids) allMods.add(m);
     setAll('.stat-modules', String(allMods.size));
@@ -1738,6 +1776,13 @@
     state.pinnedId = null;
     closeMobileSheet(false);
     if (svgState.root) svgState.root.selectAll('*').remove();
+    // Update the footer's Data path to the current layer's CSVs before the fetch
+    // starts, so the badge stays in sync with what the user is looking at.
+    const activeLayer = LAYERS[state.layer] || LAYERS.geotox;
+    const footerNodes = document.getElementById('footer-nodes-url');
+    const footerEdges = document.getElementById('footer-edges-url');
+    if (footerNodes) footerNodes.textContent = activeLayer.nodesUrl;
+    if (footerEdges) footerEdges.textContent = activeLayer.edgesUrl;
     try {
       await loadData();
     } catch (err) {
