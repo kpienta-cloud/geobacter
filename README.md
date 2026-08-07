@@ -74,15 +74,11 @@ The pathway_loss contrast class now distinguishes three scales of lost carcinoge
 
 | Subclass | Scale | Example |
 | --- | --- | --- |
-| `ancient_catabolic` | Loss during metazoan or vertebrate evolution | Anaerobic benzoyl-CoA dearomatization; organohalide respiration |
-| `human_lineage` | Pseudogenization or fixed loss-of-function in Homo sapiens | GULO, uricase (UOX), FMO2, HPGD candidate |
-| `polymorphic` | Common human loss-of-function polymorphism (gnomAD-stratified) | GSTM1-null, GSTT1-null, NAT2 slow-acetylator, UGT1A1*28, NQO1*2, ALDH2*2, CYP2D6*4, SULT1A1*2, FMO3 LoF |
+| `microbial_only` | Loss during metazoan or vertebrate evolution; predates the primate radiation | Anaerobic benzoyl-CoA dearomatization; organohalide respiration |
+| `human_lineage` | Pseudogenization or fixed loss-of-function in Homo sapiens | GULO, uricase (UOX), HPGD candidate |
+| `polymorphic` | Variant that segregates as a common polymorphism in human populations | GSTM1-null, GSTT1-null, NAT2 slow-acetylator, UGT1A1*28, NQO1*2, ALDH2*2, CYP2D6*4, SULT1A1*2, FMO3 LoF, FMO2 c.1414C>T, AS3MT slow-methylator |
 
-A parallel `ecosystem_outsourced` contrast class now records capacities the host does not carry but that live in the gut or oral microbiome (azo reduction, nitrate reduction, reductive dehalogenation, beta-glucuronidase deconjugation).
-
-### Cross-graph bridge to ExposoGraph
-
-Polymorphic-subclass variants carry `has_polymorphic_analog_in_exposograph` edges pointing to ExposoGraph 2.0 enzyme nodes by string reference. ExposoGraph is treated as an external reference; GeoToxGraph does not import ExposoGraph node content. See `geotoxgraph_schema.md` for the bridge-edge specification.
+A parallel `ecosystem_outsourced` contrast class records capacities the host does not carry but that live in the gut or oral microbiome (azo reduction, nitrate reduction, reductive dehalogenation, beta-glucuronidase deconjugation). A fifth reference class, `conserved_chemistry`, records reaction chemistry retained across humans and microbes (arsenic methylation via AS3MT / ArsM is the canonical example).
 
 ## Curation note
 

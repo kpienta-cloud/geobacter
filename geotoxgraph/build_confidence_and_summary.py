@@ -79,7 +79,7 @@ def read_csv(path: Path) -> list[dict]:
 
 def write_csv(path: Path, rows: list[dict], fields: list[str]) -> None:
     with path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore", quoting=csv.QUOTE_ALL)
         writer.writeheader()
         writer.writerows(rows)
 

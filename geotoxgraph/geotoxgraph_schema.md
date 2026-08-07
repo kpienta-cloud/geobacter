@@ -2,7 +2,7 @@
 
 ## Purpose
 
-GeoToxGraph is a strain-resolved microbial toxin-biotransformation graph. It is designed as a microbial analog to ExposoGraph, but it separates detoxification, immobilization, redox transformation, partial transformation, and possible bioactivation rather than assuming the human Phase I/II carcinogen-metabolism framing.
+GeoToxGraph is a standalone strain-resolved microbial toxin-biotransformation graph. It separates detoxification, immobilization, redox transformation, partial transformation, and possible bioactivation rather than assuming a human Phase I/II carcinogen-metabolism framing.
 
 ## Core node types
 
@@ -50,38 +50,9 @@ GeoToxGraph is a strain-resolved microbial toxin-biotransformation graph. It is 
 | *G. lovleyi* SZ | `glov_organochlorine` | Phenotype-supported PCE/TCE chlororespiration. |
 | Geobacter sp. strain IAE | `geo_iae_organochlorine` | Population-dynamics-supported chlorinated ethane dihaloelimination. |
 
-## Cross-graph bridge edges
+## Referential integrity
 
-GeoToxGraph and ExposoGraph 2.0 (github.com/kazilab/ExposoGraph2) are separate knowledge graphs. GeoToxGraph is not imported into ExposoGraph and ExposoGraph is not imported into GeoToxGraph. To connect them without duplicating node content, GeoToxGraph carries directed bridge edges that point to ExposoGraph node IDs by string reference.
-
-| Predicate | Direction | Semantics |
-| --- | --- | --- |
-| `has_polymorphic_analog_in_exposograph` | GeoToxGraph compound or contrast node to ExposoGraph enzyme or variant node | The GeoToxGraph microbial-vs-human contrast for this compound involves a human enzyme that segregates polymorphically in the ExposoGraph platform. Bridge is populated whenever a `contrast_subclass = polymorphic` annotation exists. |
-
-### Fields on `has_polymorphic_analog_in_exposograph` edges
-
-| Field | Meaning |
-| --- | --- |
-| `edge_id` | Stable edge identifier, format `edge:<compound_id>_bridge_<enzyme>` |
-| `source_id` | GeoToxGraph node ID (compound, contrast, or human-enzyme node) |
-| `target_id` | ExposoGraph node ID in the form `exposograph:enzyme:<symbol>` or `exposograph:variant:<rsid>`. String reference only. Target existence is not enforced by GeoToxGraph. |
-| `predicate` | `has_polymorphic_analog_in_exposograph` |
-| `polymorphism_id` | rsID or star-allele identifier (e.g. rs1800566, CYP2D6*4) |
-| `effect_direction` | `loss_of_function`, `reduced_function`, `gain_of_function`, or `altered_substrate_preference` |
-| `effect_magnitude` | Enum from contrast ontology: `null`, `severe`, `moderate`, `mild`, `unknown` |
-| `allele_frequency` | JSON object mapping gnomAD superpopulation to allele frequency: `{"AFR": 0.05, "AMR": 0.15, "EAS": 0.45, "EUR": 0.20, "SAS": 0.18}` |
-| `outcome_when_lost` | Prose description of the exposure-handling outcome in the loss allele |
-| `source_url` | Primary source URL for the polymorphism and effect claim |
-| `confidence_score` | Numeric score per evidence_confidence_schema.yaml |
-| `overclaim_flags` | Semicolon-separated flags including `population_frequency_missing` when frequencies are incomplete |
-
-### Non-normative reciprocal edge on the ExposoGraph side
-
-ExposoGraph may (but need not) carry a reciprocal `has_evolutionary_context_in_geotoxgraph` edge from the same enzyme or variant node back to the GeoToxGraph compound or contrast node. The reciprocal edge is optional and is not enforced by GeoToxGraph.
-
-### Referential integrity
-
-Bridge-edge targets are string references. GeoToxGraph does not validate that the ExposoGraph target node exists. A `bridge_target_unresolved` overclaim flag may be added to any bridge edge whose target has not been confirmed against a live ExposoGraph release.
+GeoToxGraph is a self-contained graph. Every edge resolves to a `source_id` and a `target_id` that live within GeoToxGraph itself; the build pipeline enforces this on every push. There are no cross-graph string-reference edges in the current release. Users who wish to compose GeoToxGraph with an external human-enzyme resource such as ExposoGraph can do so at the gene-symbol level, since the human polymorphic variant nodes carry gene symbols in their `label` and `identifier` fields.
 
 ## Important curation rules
 
@@ -89,4 +60,4 @@ Bridge-edge targets are string references. GeoToxGraph does not validate that th
 - Treat unresolved organohalide dechlorination enzymes as `system` nodes until the specific reductive dehalogenase genes are validated.
 - Separate product semantics. Ethene is a detoxified product, cis-DCE and vinyl chloride are still toxic intermediates, and Cr(III)/U(IV) represent reduced or immobilized products rather than simple detoxification.
 - Preserve provenance on every edge. Source URLs are edge-level fields, not just document-level references.
-- Bridge-edge targets are external string references. Do not attempt to enforce referential integrity across graphs at the CSV or GraphML layer. Cross-graph validation happens at manuscript-preparation time against a specific ExposoGraph release.
+- The dead-reference check is unconditional. Every edge's `source_id` and `target_id` must resolve to an existing node within GeoToxGraph.
