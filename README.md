@@ -1,8 +1,10 @@
-# Geobacter GeoToxGraph
+# GeoToxGraph
 
 **Open the interactive knowledge-graph tool:** [GeoToxGraph Browser](https://kpienta-cloud.github.io/geobacter/)
 
-This repository contains a strain-resolved GeoToxGraph seed build for mapping Geobacter toxin biotransformation, detoxification, immobilization, and organohalide modules. The GitHub Pages site opens directly to the interactive knowledge-graph browser, with additional layers for microbial-human evolutionary contrast mapping, compound-centered comparisons, confidence flags, and manuscript-ready matrix views.
+GeoToxGraph is a strain-resolved microbial reference graph for evolutionary carcinogen susceptibility. It maps microbial carcinogen handling into a four-compartment evolutionary loss ontology (microbial-only, human-lineage, polymorphic, ecosystem-outsourced), plus a reference class for chemistry conserved between humans and microbes. Every edge carries a citable source URL, a discrete evidence tier, and, in the contrast layer, a deterministic confidence score and an overclaim flag; every source URL has been resolved against NCBI E-utilities and matched to the assertion it annotates.
+
+The current release covers 13 microbial strains, including a core of four *Geobacter* strains and *Dehalococcoides mccartyi* 195 that originated as an organohalide-respiration and metal-reduction resource, plus eight further strains added since PR7 to support five demonstration carcinogens (4-aminobiphenyl, aflatoxin B1, N-nitrosodimethylamine, benzo[a]pyrene, inorganic arsenic). The GitHub Pages site opens directly to the interactive knowledge-graph browser with subgraph filtering, per-node inspector panels, CSV/JSON export, SVG/PNG figure-mode export, a compound-by-compartment matrix view, and a strain-catalog view. The historical repository URL retains the *geobacter* slug because it was the original organohalide-respiration resource; the resource itself now serves both purposes.
 
 ## Quick links
 
