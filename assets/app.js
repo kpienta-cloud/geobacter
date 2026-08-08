@@ -1415,7 +1415,14 @@
       el('dl', { class: 'meta-grid' }, [
         el('dt', {}, 'Nodes'), el('dd', { class: 'stat-nodes' }, String(state.nodes.length)),
         el('dt', {}, 'Edges'), el('dd', { class: 'stat-edges' }, String(state.edges.length)),
-        el('dt', {}, 'Strains'), el('dd', { class: 'stat-strains' }, String(new Set(state.nodes.filter(n => n.strain_id).map(n => n.strain_id)).size)),
+        el('dt', {}, 'Strains'), el('dd', { class: 'stat-strains' }, String((() => {
+          // Match the updateCounts logic: exclude pseudo-strain buckets when real strain codes exist,
+          // so the sidebar count agrees with the manuscript's 13 microbial strains.
+          const PSEUDO = new Set(['shared', 'geobacter', 'environmental_microbes', 'human_host']);
+          const all = new Set(state.nodes.filter(n => n.strain_id).map(n => n.strain_id));
+          const real = new Set([...all].filter(s => !PSEUDO.has(s)));
+          return real.size > 0 ? real.size : all.size;
+        })())),
         el('dt', {}, 'Modules'), el('dd', { class: 'stat-modules' }, String((() => { const s = new Set(); for (const n of state.nodes) for (const m of n.module_ids) s.add(m); return s.size; })())),
       ]),
       el('p', { class: 'muted' }, [
